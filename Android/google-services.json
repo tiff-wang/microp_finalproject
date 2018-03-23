@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "613279743817",
+    "firebase_url": "https://microp-2.firebaseio.com",
+    "project_id": "microp-2",
+    "storage_bucket": "microp-2.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:613279743817:android:626aa9f3821a497c",
+        "android_client_info": {
+          "package_name": "com.microp.android"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "613279743817-3armqle0fbibfk77r641qj82k1q3l4g0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCVnKhRn1FfLzsGxvMff293VWcmzofDzmA"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
