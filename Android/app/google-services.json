@@ -10,7 +10,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:613279743817:android:626aa9f3821a497c",
         "android_client_info": {
-          "package_name": "com.microp.android"
+          "package_name": "microp.android"
         }
       },
       "oauth_client": [
