@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "904872551788",
+    "firebase_url": "https://microprocessor-46d8e.firebaseio.com",
+    "project_id": "microprocessor-46d8e",
+    "storage_bucket": "microprocessor-46d8e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:904872551788:android:21a7141c2948d372",
+        "android_client_info": {
+          "package_name": "g2.microprocessor"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "904872551788-k4ofnp8eoahodt36fg18hl23f8ple8hd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "g2.microprocessor",
+            "certificate_hash": "29f827a35ef4132cc7576a4f9452717b5d16edf0"
+          }
+        },
+        {
+          "client_id": "904872551788-hhdvpijqsbdofq5jmprap221ur54acep.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCdEZPjhVPTz5aGdbjYJa3OZpCn1ff-LzM"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "904872551788-hhdvpijqsbdofq5jmprap221ur54acep.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
