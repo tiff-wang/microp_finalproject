@@ -1,3 +1,11 @@
+/* 
+
+useful links: 
+- test file url on firebase: 
+https://firebasestorage.googleapis.com/v0/b/microp-g2.appspot.com/o/test-3.mp3?alt=media&token=3e551f22-a2a1-42af-870f-b745ae8cd570
+
+*/
+
 package microp.android;
 
 import android.support.v7.app.AppCompatActivity;
