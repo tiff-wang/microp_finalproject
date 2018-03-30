@@ -530,6 +530,11 @@
               <FileType>5</FileType>
               <FilePath>..\Inc\LIS3DSH.h</FilePath>
             </File>
+            <File>
+              <FileName>readACC.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\readACC.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

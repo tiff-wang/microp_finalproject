@@ -39,25 +39,40 @@
 #include "main.h"
 #include "stm32f4xx_hal.h"
 #include "lis3dsh.h"
-
+#include <math.h>
 
 /* Private variables ---------------------------------------------------------*/
 
 LIS3DSH_InitTypeDef 		Acc_instance;
 
 /* Private variables ---------------------------------------------------------*/
-	uint8_t status;
-	float Buffer[3];
+	uint8_t status;							// What does this status represent???
+	float Buffer[3];						// Buffer[3] for what???
 	float accX, accY, accZ;
-	uint8_t MyFlag = 0;
+	uint8_t MyFlag = 0;					// Flagging system used for??? --> gets updated in SysTick_Handler --> 50Hz???
+	
+	int state = 0;
+	int tap = 0;
+	int foundTap = 0;
+	int accCounter = 0;									//Used for double tap detection
+	int minThreshold = 200;							//Gap need to be determined --> counter uses HAL_GetTick()
+	int maxThreshold = 2000;
+	int boolFirstPass = 1; 							//Boolean serving to tell that first tap occured
+	int previousTap = -1;
+	int windowSize = 5;								//Length of window for recodring accelorometer
+	float accXX[5] = {0.0};
+	float accYY[5] = {0.0};
+	float accZZ[5] = {0.0};
 	
 	
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-
 void initializeACC			(void);
+	
+void readACC(void);
+int readTap(void);
 
 
 int main(void)
@@ -75,29 +90,58 @@ int main(void)
 
   while (1)
   {
- 
-		if (MyFlag/200)
-		{
-
-			MyFlag = 0;
-			//Reading the accelerometer status register
-				LIS3DSH_Read (&status, LIS3DSH_STATUS, 1);
-				//The first four bits denote if we have new data on all XYZ axes, 
-		   	//Z axis only, Y axis only or Z axis only. If any or all changed, proceed
-				if ((status & 0x0F) != 0x00)
-				{
-					LIS3DSH_ReadACC(&Buffer[0]);
-					accX = (float)Buffer[0];
-					accY = (float)Buffer[1];
-					accZ = (float)Buffer[2];
-					printf("X: %4f     Y: %4f     Z: %4f \n", accX, accY, accZ);
+		switch(state) {
+			case 0:	
+				//Read acceleroemeter
+				readACC();
+				//Detect if single our double tap
+				foundTap = readTap(); //Return 0 or 1 depending if found tap from accel. sliding window
+				//either 1 or 2 tap was detected
+				if(previousTap != -1 && accCounter - previousTap > maxThreshold){
+					accCounter = 0;
+					previousTap = -1;
+					if (tap ==1){
+						tap =0;
+						state = 1;
+					}
+					else{
+						tap =0;
+						state = 4;
+					}
 				}
-			}
-			
-  }
-
-	
-
+				if(foundTap){
+					accCounter = HAL_GetTick();
+					if(previousTap != -1 && accCounter - previousTap > minThreshold){
+						//Detect Double tap
+						tap =2;
+					}
+					else{
+						//If here --> first tap detected
+						//Start Timer
+						previousTap = HAL_GetTick();
+						tap =1;
+					}
+				}
+				
+				break;
+			case 1:
+				//Set sampling frequency to 8K samples/sec
+				//Record Audio
+				break;
+			case 2:
+				//Transfer data to Nucleo Board (dataToSend)
+				break;
+			case 3:
+				//Wait till receive data from Nucle Board (N)
+				//Blink LED2 N times
+				break;
+			case 4:
+				//Set sampling frequency to 100Hz
+				//accData = Read accelerometer for 10 seconds
+				//dataToSend = PNR(accData)
+				break;
+		}
+	}
 }
 
 /** System Clock Configuration
@@ -328,6 +372,7 @@ void initializeACC(void){
 	
 	LIS3DSH_Init(&Acc_instance);	
 	
+	//WHAT ARE THOSE USED FOR?????????????????????????????????????????????????????????????????????????????????????????????????????????
 	/* Enabling interrupt conflicts with push button
   ACC_Interrupt_Config.Dataready_Interrupt	= LIS3DSH_DATA_READY_INTERRUPT_ENABLED;
 	ACC_Interrupt_Config.Interrupt_signal			= LIS3DSH_ACTIVE_HIGH_INTERRUPT_SIGNAL;
@@ -336,6 +381,17 @@ void initializeACC(void){
 	LIS3DSH_DataReadyInterruptConfig(&ACC_Interrupt_Config);
 	*/
 }
+
+int readTap(void){
+	int tappy = 0;
+	for(int i=0; i<windowSize; i++){
+		if(accYY[i] < -3.0){
+			tappy =1;
+		}
+	}
+	return tappy;
+}
+
 
 /* USER CODE END 4 */
 

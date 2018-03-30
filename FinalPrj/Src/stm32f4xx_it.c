@@ -37,6 +37,7 @@
 
 /* USER CODE BEGIN 0 */
 extern uint8_t MyFlag;
+extern int accCounter;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
@@ -57,6 +58,7 @@ void SysTick_Handler(void)
   HAL_SYSTICK_IRQHandler();
   /* USER CODE BEGIN SysTick_IRQn 1 */
 	MyFlag ++;
+	accCounter++;
   /* USER CODE END SysTick_IRQn 1 */
 }
 
