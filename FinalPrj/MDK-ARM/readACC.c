@@ -10,9 +10,16 @@ extern float accXX[], accYY[], accZZ[];
 extern uint8_t MyFlag;
 extern int windowSize;
 
+extern float tempMax, tempMin;
+extern int tappy;
+extern int foundTap;
+extern int nbValues;
+
 void readACC(void){
-	if (MyFlag/200){ //At 1000Hz --> true at every 0.2 sec
+	if (MyFlag/10){ //At 1000Hz --> true at every 0.2 sec
 		// SEE: HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
+		
+		nbValues++;
 
 		MyFlag = 0;
 		//Reading the accelerometer status register
@@ -33,18 +40,20 @@ void readACC(void){
 			accX = (float)Buffer[0];
 			accY = (float)Buffer[1];
 			accZ = (float)Buffer[2];
-			printf("X: %4f     Y: %4f     Z: %4f \n", accX, accY, accZ);
+			if(tappy){
+				printf("X: %4f     Y: %4f     Z: 	%4f tempMax: %4f	tempMin: %4f		tappy: %i		foundTap: %i\n", accX, accY, accZ, tempMax, tempMin, tappy, foundTap);
+			}
+			
+			//Sliding window implementation [Latest...PresentValue]
+			for(int i = 0; i <windowSize - 1; i++){
+				accXX[i] = accXX[i+1];
+				accYY[i] = accYY[i+1];
+				accZZ[i] = accZZ[i+1];
+			}
+			//Store new fetched value
+			accXX[windowSize-1] = accX;
+			accYY[windowSize-1] = accY;
+			accZZ[windowSize-1] = accZ;
 		}
 	}
-	//Sliding window implementation [Latest...PresentValue]
-	for(int i = 0; i <windowSize - 1; i++){
-		accXX[i] = accXX[i+1];
-		accYY[i] = accYY[i+1];
-		accZZ[i] = accZZ[i+1];
-	}
-	//Store new fetched value
-	accXX[windowSize-1] = accX;
-	accYY[windowSize-1] = accY;
-	accZZ[windowSize-1] = accZ;
-
 }

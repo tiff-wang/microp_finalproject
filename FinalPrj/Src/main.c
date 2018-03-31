@@ -40,6 +40,7 @@
 #include "stm32f4xx_hal.h"
 #include "lis3dsh.h"
 #include <math.h>
+#include <stdio.h>
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -55,14 +56,24 @@ LIS3DSH_InitTypeDef 		Acc_instance;
 	int tap = 0;
 	int foundTap = 0;
 	int accCounter = 0;									//Used for double tap detection
-	int minThreshold = 200;							//Gap need to be determined --> counter uses HAL_GetTick()
-	int maxThreshold = 2000;
+	int minThreshold = 100;							//Gap need to be determined --> counter uses HAL_GetTick()
+	int maxThreshold = 1500;
 	int boolFirstPass = 1; 							//Boolean serving to tell that first tap occured
 	int previousTap = -1;
 	int windowSize = 5;								//Length of window for recodring accelorometer
 	float accXX[5] = {0.0};
 	float accYY[5] = {0.0};
 	float accZZ[5] = {0.0};
+	
+	float tempMax = -INFINITY;
+	float tempMin = INFINITY;
+	int tappy = 0;
+	int nbValues = 0;
+	int stable = 0;
+	
+	
+	float tempMaxX, tempMaxY, tempMaxZ = -INFINITY; //used for accStable();
+	float tempMinX, tempMinY, tempMinZ = INFINITY;
 	
 	
 
@@ -73,6 +84,7 @@ void initializeACC			(void);
 	
 void readACC(void);
 int readTap(void);
+int accStable(void);
 
 
 int main(void)
@@ -91,51 +103,75 @@ int main(void)
   while (1)
   {
 		switch(state) {
-			case 0:	
+			case 0:
+				readACC();
+				if(nbValues > 600){
+					if(accStable()){
+						stable = 0;
+						state =1;
+					}
+					//else restart
+					else{
+						tempMaxX = -INFINITY;
+						tempMaxY = -INFINITY;
+						tempMaxZ = -INFINITY;
+						tempMinX = INFINITY;
+						tempMinY = INFINITY;
+						tempMinZ = INFINITY;
+					}
+				nbValues = 0;
+				}
+			break;
+			case 1:	
 				//Read acceleroemeter
 				readACC();
-				//Detect if single our double tap
-				foundTap = readTap(); //Return 0 or 1 depending if found tap from accel. sliding window
-				//either 1 or 2 tap was detected
-				if(previousTap != -1 && accCounter - previousTap > maxThreshold){
-					accCounter = 0;
-					previousTap = -1;
-					if (tap ==1){
-						tap =0;
-						state = 1;
+			
+				if(nbValues > 50){
+					//Detect if single our double tap
+					foundTap = readTap(); //Return 0 or 1 depending if found tap from accel. sliding window
+					//either 1 or 2 tap was detected
+					if(previousTap != -1 && accCounter - previousTap > maxThreshold){
+						accCounter = 0;
+						previousTap = -1;
+						if (tap ==1){
+							tap =0;
+							nbValues = 0;
+							state = 2;
+						}
+						else{
+							tap =0;
+							nbValues = 0;
+							state = 5;
+						}
 					}
-					else{
-						tap =0;
-						state = 4;
-					}
-				}
-				if(foundTap){
-					accCounter = HAL_GetTick();
-					if(previousTap != -1 && accCounter - previousTap > minThreshold){
-						//Detect Double tap
-						tap =2;
-					}
-					else{
-						//If here --> first tap detected
-						//Start Timer
-						previousTap = HAL_GetTick();
-						tap =1;
+					if(foundTap){
+						accCounter = HAL_GetTick();
+						if(previousTap != -1 && accCounter - previousTap > minThreshold){
+							//Detect Double tap
+							tap =2;
+						}
+						else{
+							//If here --> first tap detected
+							//Start Timer
+							previousTap = HAL_GetTick();
+							tap =1;
+						}
 					}
 				}
 				
 				break;
-			case 1:
+			case 2:
 				//Set sampling frequency to 8K samples/sec
 				//Record Audio
 				break;
-			case 2:
+			case 3:
 				//Transfer data to Nucleo Board (dataToSend)
 				break;
-			case 3:
+			case 4:
 				//Wait till receive data from Nucle Board (N)
 				//Blink LED2 N times
 				break;
-			case 4:
+			case 5:
 				//Set sampling frequency to 100Hz
 				//accData = Read accelerometer for 10 seconds
 				//dataToSend = PNR(accData)
@@ -382,12 +418,50 @@ void initializeACC(void){
 	*/
 }
 
-int readTap(void){
-	int tappy = 0;
+int accStable(void){
 	for(int i=0; i<windowSize; i++){
-		if(accYY[i] < -3.0){
-			tappy =1;
+		//update tempMin
+		if(accXX[i] < tempMinX){
+			tempMinX = accXX[i];
 		}
+		if(accYY[i] < tempMinY){
+			tempMinY = accYY[i];
+		}
+		if(accYY[i] < tempMinZ){
+			tempMinZ = accZZ[i];
+		}
+		//update tempMax
+		if(accXX[i] > tempMaxX){
+			tempMaxX = accXX[i];
+		}
+		if(accYY[i] > tempMaxY){
+			tempMaxY = accYY[i];
+		}
+		if(accZZ[i] > tempMaxZ){
+			tempMaxZ = accZZ[i];
+		}
+	}
+	if((fabs(tempMaxX) - fabs(tempMinX)) < 20 && (fabs(tempMaxY) - fabs(tempMinY)) < 20 && (fabs(tempMaxZ) - fabs(tempMinZ)) < 20){
+		stable =1;
+	}
+	return stable;
+}
+
+
+int readTap(void){
+	tappy = 0;
+	tempMax = -INFINITY;
+	tempMin = INFINITY;
+	for(int i=0; i<windowSize; i++){
+		if(accYY[i] < tempMin){
+			tempMin = accYY[i];
+		}
+		if(accYY[i] > tempMax){
+			tempMax = accYY[i];
+		}
+	}
+	if((fabs(tempMax) - fabs(tempMin)) > 40){
+		tappy =1;
 	}
 	return tappy;
 }
