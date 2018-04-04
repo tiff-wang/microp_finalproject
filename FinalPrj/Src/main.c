@@ -41,52 +41,75 @@
 #include "lis3dsh.h"
 #include <math.h>
 #include <stdio.h>
-
 /* Private variables ---------------------------------------------------------*/
 
 LIS3DSH_InitTypeDef 		Acc_instance;
+ADC_HandleTypeDef hadc1;
+TIM_HandleTypeDef htim2;
 
-/* Private variables ---------------------------------------------------------*/
+/* User Private variables ---------------------------------------------------------*/
+	//ACC.
 	uint8_t status;							// What does this status represent???
 	float Buffer[3];						// Buffer[3] for what???
 	float accX, accY, accZ;
 	uint8_t MyFlag = 0;					// Flagging system used for??? --> gets updated in SysTick_Handler --> 50Hz???
-	
+	//General Logic
 	int state = 0;
+	//Tap detection
 	int tap = 0;
-	int foundTap = 0;
 	int accCounter = 0;									//Used for double tap detection
-	int minThreshold = 100;							//Gap need to be determined --> counter uses HAL_GetTick()
+	int minThreshold = 150;							//Gap need to be determined --> counter uses HAL_GetTick()
 	int maxThreshold = 1500;
 	int boolFirstPass = 1; 							//Boolean serving to tell that first tap occured
-	int previousTap = -1;
-	int windowSize = 5;								//Length of window for recodring accelorometer
-	float accXX[5] = {0.0};
-	float accYY[5] = {0.0};
-	float accZZ[5] = {0.0};
-	
-	float tempMax = -INFINITY;
+	int previousTap = -1;								//Served to check when was the first tap was done
+	int windowSize = 10;								//Length of window for recodring accelorometer
+	float accXX[10] = {0.0};
+	float accYY[10] = {0.0};
+	float accZZ[10] = {0.0};
+	float tempMax = -INFINITY;					//Used for readTap() for maximum and minumum evaluation
 	float tempMin = INFINITY;
-	int tappy = 0;
-	int nbValues = 0;
-	int stable = 0;
-	
-	
+	//stabilized state
+	int nbValues = 0;										//To ensure accXX, accYY, or accZZ has gotten ride of all the 0 it was initialized to
+	int stable = 0;											//For accStable(); Return variable 
+	int stableNb = 0;										//Served to get the number of times accStable() returns 1 in a row
 	float tempMaxX, tempMaxY, tempMaxZ = -INFINITY; //used for accStable();
 	float tempMinX, tempMinY, tempMinZ = INFINITY;
+	//MIC
+	int firstPass = 1; //boolean for allowing 1 sec delay before reading mic. data
+	int prevCNT = 0; 	 //Counter for allowing 1 sec delay before reading mic. data + use for timing the number return (N) for LED -BLINKY()
+	float firADC = 0.0;
+	int audioBuffer[10000] = {0};
+	int audioIndex = 0 ;
+	//int adcReadings =0;							//Use for testing purposes (print)
+	int audioBool =0; 							//Boolean for audio reading (used in state 3)
+	//Discovery board - pitch and roll
+	float pitch[1000] = {0};
+	float roll[1000] ={0};
+	//Blinky
+	int nbBlink = 0;
 	
+	
+
 	
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 void initializeACC			(void);
+static void MX_ADC1_Init(void);
+void MX_TIM2_Init(void);
+float getPitch(float x, float y, float z);
+float getRoll(float x, float y, float z);
 	
 void readACC(void);
 int readTap(void);
 int accStable(void);
+//ADC??????????????????????????????????????
+extern void ADC_IRQHandler(void);
+//Blinky
+void blinky(int N);
 
-
+	
 int main(void)
 {
 
@@ -95,7 +118,10 @@ int main(void)
   SystemClock_Config();
   MX_GPIO_Init();
 	initializeACC	();	// Like any other peripheral, you need to initialize it. Refer to the its driver to learn more.
-
+	MX_ADC1_Init();
+	MX_TIM2_Init();
+	HAL_TIM_Base_Start(&htim2);
+	HAL_ADC_Start_IT(&hadc1);
 	// and example of sending a data through UART, but you need to configure the UART block:
 	// HAL_UART_Transmit(&huart2,"FinalProject\n",14,2000); 
 
@@ -104,11 +130,11 @@ int main(void)
   {
 		switch(state) {
 			case 0:
+			{
 				readACC();
-				if(nbValues > 600){
+				if(nbValues > 10){
 					if(accStable()){
-						stable = 0;
-						state =1;
+						stableNb ++;
 					}
 					//else restart
 					else{
@@ -118,21 +144,31 @@ int main(void)
 						tempMinX = INFINITY;
 						tempMinY = INFINITY;
 						tempMinZ = INFINITY;
+						stableNb =0;
 					}
 				nbValues = 0;
 				}
-			break;
+				if(stableNb > 50){
+					state =1;
+					stableNb = 0;
+				}
+				break;
+			}
 			case 1:	
+			{
+				
 				//Read acceleroemeter
 				readACC();
+				accCounter = HAL_GetTick();
 			
 				if(nbValues > 50){
+					HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_SET);	//GREEN LED
 					//Detect if single our double tap
-					foundTap = readTap(); //Return 0 or 1 depending if found tap from accel. sliding window
-					//either 1 or 2 tap was detected
+					//either 1 or 2 tap was DETECTED
 					if(previousTap != -1 && accCounter - previousTap > maxThreshold){
 						accCounter = 0;
 						previousTap = -1;
+						HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_RESET);
 						if (tap ==1){
 							tap =0;
 							nbValues = 0;
@@ -144,8 +180,7 @@ int main(void)
 							state = 5;
 						}
 					}
-					if(foundTap){
-						accCounter = HAL_GetTick();
+					if(readTap()){
 						if(previousTap != -1 && accCounter - previousTap > minThreshold){
 							//Detect Double tap
 							tap =2;
@@ -160,22 +195,115 @@ int main(void)
 				}
 				
 				break;
+			}
 			case 2:
+			{
 				//Set sampling frequency to 8K samples/sec
 				//Record Audio
+				if (firstPass){
+					firstPass = 0;
+					audioBool = 1;				//use for ensuring the right data gets sent on state 3
+					prevCNT = HAL_GetTick();
+					HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_SET);	//ORANGE LED
+				}
+				
+				//allow some delay
+				if(HAL_GetTick() - prevCNT > 3000){
+					//Set an interrupt or pullforconversion?
+					ADC_IRQHandler();
+					audioBuffer[audioIndex] = firADC;
+				
+				/*
+				if(HAL_GetTick() - prevCNT > 1000){
+					HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_SET);	//ORANGE LED
+					HAL_ADC_Start(&hadc1); 
+					
+					//MUST PUT IN BYTE
+					int i = -1;
+					while(HAL_ADC_PollForConversion(&hadc1, 10000) == HAL_OK){
+						i++;
+						adcReadings = HAL_ADC_GetValue(&hadc1);
+						audioBuffer[i] = adcReadings;
+						printf("audio %i \n", audioBuffer[i]);
+					}
+					*/
+					
+					//When here --> done reading mic. data
+					HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_RESET);
+					firstPass = 1; //set it ready for next Pass
+					state = 3;
+				}
+				
 				break;
+			}
 			case 3:
+			{
+				//Question: When sending data with Hal_UART... does code keep running or waits till all data is sent, then jumps to the nextl line?
+				
 				//Transfer data to Nucleo Board (dataToSend)
+				//Data to sent: Audio(1s) OR pitch and roll(10s)
+				if(audioBool){
+					HAL_GPIO_WritePin(GPIOD, LD6_Pin, GPIO_PIN_SET); //BLUE LED
+					// and example of sending a data through UART, but you need to configure the UART block:
+					// HAL_UART_Transmit(&huart2,"FinalProject\n",14,2000);
+				}
+				else{
+					HAL_GPIO_WritePin(GPIOD, LD6_Pin, GPIO_PIN_SET); //BLUE LED
+					// and example of sending a data through UART, but you need to configure the UART block:
+					// HAL_UART_Transmit(&huart2,"FinalProject\n",14,2000); 
+				}
+				
+				//WHEN RECEIVE FINISH TRANSMITTING MESSAGE
+				if (firstPass){
+					firstPass = 0;
+					prevCNT = HAL_GetTick();
+				}
+				if(HAL_GetTick() - prevCNT > 10000){
+					if(audioBool){
+						
+						//Reset audioBool
+						audioBool = 0; 
+						HAL_GPIO_WritePin(GPIOD, LD6_Pin, GPIO_PIN_RESET); //BLUE LED
+						state = 4;						
+					}
+					else{
+						//Reset audioBool
+						audioBool = 0; 
+						HAL_GPIO_WritePin(GPIOD, LD6_Pin, GPIO_PIN_RESET); //BLUE LED
+						state = 0;
+					}
+				}
 				break;
+			}
 			case 4:
-				//Wait till receive data from Nucle Board (N)
-				//Blink LED2 N times
+			{
+				//Wait till receive data from Nucleo Board (N)
+				//If(data.recceived)
+				//int N = data.get;
+				blinky(5);
+				state = 0;
+				//Blink LED2 N times -->blinky(N)
 				break;
+			}
 			case 5:
+			{
 				//Set sampling frequency to 100Hz
 				//accData = Read accelerometer for 10 seconds
-				//dataToSend = PNR(accData)
+				HAL_GPIO_WritePin(GPIOD, LD5_Pin, GPIO_PIN_SET);	//RED LED
+				readACC();
+				
+				if(nbValues >= 1016){
+					//send data --> go to state 3
+					
+					HAL_GPIO_WritePin(GPIOD, LD5_Pin, GPIO_PIN_RESET);	//RED LED
+					printf("pitch[0]: %4f    roll[0]: %4f     nbValues: %i\n", pitch[0], roll[0], nbValues);
+					//printf("pitch[12]: %4f    roll[12]: %4f     nbValues: %i\n", pitch[12], roll[12], nbValues);
+					
+					nbValues = 0;
+					state = 3;
+				}
 				break;
+			}
 		}
 	}
 }
@@ -235,6 +363,73 @@ void SystemClock_Config(void)
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 }
 
+/* ADC1 init function */
+static void MX_ADC1_Init(void)
+{
+
+  ADC_ChannelConfTypeDef sConfig;
+
+    /**Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion) 
+    */
+  hadc1.Instance = ADC1;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+  hadc1.Init.Resolution = ADC_RESOLUTION_10B;
+  hadc1.Init.ScanConvMode = DISABLE;
+  hadc1.Init.ContinuousConvMode = ENABLE;
+  hadc1.Init.DiscontinuousConvMode = DISABLE;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
+  hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T2_TRGO;
+  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc1.Init.NbrOfConversion = 1;
+  hadc1.Init.DMAContinuousRequests = DISABLE;
+  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;	
+  if (HAL_ADC_Init(&hadc1) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+    /**Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. 
+    */
+  sConfig.Channel = ADC_CHANNEL_1;
+  sConfig.Rank = 1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+}
+/* TIM2 init function ADC timer*/
+static void MX_TIM2_Init(void)
+{
+
+  TIM_ClockConfigTypeDef sClockSourceConfig;
+  TIM_MasterConfigTypeDef sMasterConfig;
+
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 10;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 10;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+}
 
 
 /** Configure pins as 
@@ -408,7 +603,7 @@ void initializeACC(void){
 	
 	LIS3DSH_Init(&Acc_instance);	
 	
-	//WHAT ARE THOSE USED FOR?????????????????????????????????????????????????????????????????????????????????????????????????????????
+	
 	/* Enabling interrupt conflicts with push button
   ACC_Interrupt_Config.Dataready_Interrupt	= LIS3DSH_DATA_READY_INTERRUPT_ENABLED;
 	ACC_Interrupt_Config.Interrupt_signal			= LIS3DSH_ACTIVE_HIGH_INTERRUPT_SIGNAL;
@@ -419,6 +614,7 @@ void initializeACC(void){
 }
 
 int accStable(void){
+	stable = 0;
 	for(int i=0; i<windowSize; i++){
 		//update tempMin
 		if(accXX[i] < tempMinX){
@@ -441,7 +637,7 @@ int accStable(void){
 			tempMaxZ = accZZ[i];
 		}
 	}
-	if((fabs(tempMaxX) - fabs(tempMinX)) < 20 && (fabs(tempMaxY) - fabs(tempMinY)) < 20 && (fabs(tempMaxZ) - fabs(tempMinZ)) < 20){
+	if((fabs(tempMaxX) - fabs(tempMinX)) < 30 && (fabs(tempMaxY) - fabs(tempMinY)) < 30 && (fabs(tempMaxZ) - fabs(tempMinZ)) < 30){
 		stable =1;
 	}
 	return stable;
@@ -449,7 +645,7 @@ int accStable(void){
 
 
 int readTap(void){
-	tappy = 0;
+	int tappy = 0;
 	tempMax = -INFINITY;
 	tempMin = INFINITY;
 	for(int i=0; i<windowSize; i++){
@@ -466,7 +662,25 @@ int readTap(void){
 	return tappy;
 }
 
-
+void blinky(int N){
+	int counter = HAL_GetTick();
+	int idx = 1;
+	HAL_GPIO_WritePin(GPIOD, LD5_Pin, GPIO_PIN_SET); //GREEN LED
+	while(N != 0){
+		
+		if(HAL_GetTick() - counter > 500){
+			//Toggle LED
+			HAL_GPIO_WritePin(GPIOD, LD5_Pin, (idx == 0)? GPIO_PIN_SET : GPIO_PIN_RESET); //GREEN LED
+			idx ++;
+			idx = idx%2;
+			counter = HAL_GetTick();
+			if(idx ==1){
+				N--;
+			}
+		}
+	}
+	HAL_GPIO_WritePin(GPIOD, LD5_Pin, GPIO_PIN_RESET);
+}
 /* USER CODE END 4 */
 
 /**

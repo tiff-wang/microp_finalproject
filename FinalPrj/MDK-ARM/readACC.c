@@ -2,6 +2,12 @@
 #include "stm32f4xx_hal.h"
 #include "lis3dsh.h"
 #include <math.h>
+#define M_PI 3.14159265358979323846
+
+void readACC(void);
+float getPitch(float x, float y, float z);
+float getRoll(float x, float y, float z);
+
 
 extern uint8_t status;
 extern float Buffer[];
@@ -9,14 +15,20 @@ extern float accX,accY, accZ;
 extern float accXX[], accYY[], accZZ[];
 extern uint8_t MyFlag;
 extern int windowSize;
+extern int state;
 
 extern float tempMax, tempMin;
 extern int tappy;
 extern int foundTap;
 extern int nbValues;
 
+float singlePitch = 0.0;
+float singleRoll = 0.0;
+extern float pitch[];
+extern float roll[];
+
 void readACC(void){
-	if (MyFlag/10){ //At 1000Hz --> true at every 0.2 sec
+	if (MyFlag/10){ //At 1000Hz --> true at every 0.01 sec
 		// SEE: HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
 		
 		nbValues++;
@@ -40,20 +52,47 @@ void readACC(void){
 			accX = (float)Buffer[0];
 			accY = (float)Buffer[1];
 			accZ = (float)Buffer[2];
+			/*
 			if(tappy){
-				printf("X: %4f     Y: %4f     Z: 	%4f tempMax: %4f	tempMin: %4f		tappy: %i		foundTap: %i\n", accX, accY, accZ, tempMax, tempMin, tappy, foundTap);
+				printf("X: %4f     Y: %4f     Z: 	%4f 	foundTap: %i\n", accX, accY, accZ, foundTap);
 			}
-			
+			*/
 			//Sliding window implementation [Latest...PresentValue]
-			for(int i = 0; i <windowSize - 1; i++){
-				accXX[i] = accXX[i+1];
-				accYY[i] = accYY[i+1];
-				accZZ[i] = accZZ[i+1];
+			if(state ==5){
+
+				for(int i = 0; i < 1000; i++){
+					pitch[i] = pitch[i+1];
+					roll[i] = roll[i+1];
+				}
+				
+				singlePitch = getPitch(accX, accY, accZ);
+				pitch[999] = singlePitch;
+				singleRoll = getRoll(accX, accY, accZ);
+				roll[999] = singleRoll;
+				printf("singlePitch: %4f    singleRoll: %4f     nbValues: %i\n", singlePitch, singleRoll, nbValues);
 			}
-			//Store new fetched value
-			accXX[windowSize-1] = accX;
-			accYY[windowSize-1] = accY;
-			accZZ[windowSize-1] = accZ;
+			else{
+				
+				for(int i = 0; i <windowSize - 1; i++){
+					accXX[i] = accXX[i+1];
+					accYY[i] = accYY[i+1];
+					accZZ[i] = accZZ[i+1];
+				}
+				//Store new fetched value
+				accXX[windowSize-1] = accX;
+				accYY[windowSize-1] = accY;
+				accZZ[windowSize-1] = accZ;
+			}
 		}
 	}
 }
+float getPitch(float x, float y, float z){
+	float pitch = atan2(y,(sqrt(x*x + z*z)))* 180 / M_PI;
+	return pitch;
+}
+
+float getRoll(float x, float y, float z){
+	float roll = atan2(-x,z) * 180 / M_PI;
+	return roll;
+}
+
