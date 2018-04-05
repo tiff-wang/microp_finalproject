@@ -80,6 +80,7 @@ void ADC_IRQHandler(void)
   /* USER CODE END ADC_IRQn 0 */
   HAL_ADC_IRQHandler(&hadc1);
 	firADC = FIR_C(HAL_ADC_GetValue(&hadc1));
+	printf("firADC %f \n", firADC);
   /* USER CODE BEGIN ADC_IRQn 1 */
 
   /* USER CODE END ADC_IRQn 1 */

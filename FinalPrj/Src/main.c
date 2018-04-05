@@ -45,7 +45,6 @@
 
 LIS3DSH_InitTypeDef 		Acc_instance;
 ADC_HandleTypeDef hadc1;
-TIM_HandleTypeDef htim2;
 
 /* User Private variables ---------------------------------------------------------*/
 	//ACC.
@@ -66,19 +65,16 @@ TIM_HandleTypeDef htim2;
 	float accXX[10] = {0.0};
 	float accYY[10] = {0.0};
 	float accZZ[10] = {0.0};
-	float tempMax = -INFINITY;					//Used for readTap() for maximum and minumum evaluation
-	float tempMin = INFINITY;
+	
 	//stabilized state
 	int nbValues = 0;										//To ensure accXX, accYY, or accZZ has gotten ride of all the 0 it was initialized to
 	int stable = 0;											//For accStable(); Return variable 
 	int stableNb = 0;										//Served to get the number of times accStable() returns 1 in a row
-	float tempMaxX, tempMaxY, tempMaxZ = -INFINITY; //used for accStable();
-	float tempMinX, tempMinY, tempMinZ = INFINITY;
 	//MIC
 	int firstPass = 1; //boolean for allowing 1 sec delay before reading mic. data
 	int prevCNT = 0; 	 //Counter for allowing 1 sec delay before reading mic. data + use for timing the number return (N) for LED -BLINKY()
 	float firADC = 0.0;
-	int audioBuffer[10000] = {0};
+	float audioBuffer[10000] = {0};
 	int audioIndex = 0 ;
 	//int adcReadings =0;							//Use for testing purposes (print)
 	int audioBool =0; 							//Boolean for audio reading (used in state 3)
@@ -97,7 +93,6 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 void initializeACC			(void);
 static void MX_ADC1_Init(void);
-void MX_TIM2_Init(void);
 float getPitch(float x, float y, float z);
 float getRoll(float x, float y, float z);
 	
@@ -119,8 +114,6 @@ int main(void)
   MX_GPIO_Init();
 	initializeACC	();	// Like any other peripheral, you need to initialize it. Refer to the its driver to learn more.
 	MX_ADC1_Init();
-	MX_TIM2_Init();
-	HAL_TIM_Base_Start(&htim2);
 	HAL_ADC_Start_IT(&hadc1);
 	// and example of sending a data through UART, but you need to configure the UART block:
 	// HAL_UART_Transmit(&huart2,"FinalProject\n",14,2000); 
@@ -138,12 +131,14 @@ int main(void)
 					}
 					//else restart
 					else{
+						/*
 						tempMaxX = -INFINITY;
 						tempMaxY = -INFINITY;
 						tempMaxZ = -INFINITY;
 						tempMinX = INFINITY;
 						tempMinY = INFINITY;
 						tempMinZ = INFINITY;
+						*/
 						stableNb =0;
 					}
 				nbValues = 0;
@@ -198,7 +193,7 @@ int main(void)
 			}
 			case 2:
 			{
-				//Set sampling frequency to 8K samples/sec
+				//Set sampling frequency to higher than 8K samples/sec
 				//Record Audio
 				if (firstPass){
 					firstPass = 0;
@@ -207,11 +202,14 @@ int main(void)
 					HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_SET);	//ORANGE LED
 				}
 				
-				//allow some delay
-				if(HAL_GetTick() - prevCNT > 3000){
+				//allow some delay (500ms)
+				if(HAL_GetTick() - prevCNT > 500){
 					//Set an interrupt or pullforconversion?
 					ADC_IRQHandler();
 					audioBuffer[audioIndex] = firADC;
+					//printf("audio %f \n", audioBuffer[audioIndex]);
+					audioIndex ++;
+				}
 				
 				/*
 				if(HAL_GetTick() - prevCNT > 1000){
@@ -227,10 +225,11 @@ int main(void)
 						printf("audio %i \n", audioBuffer[i]);
 					}
 					*/
-					
+				if(audioIndex > 10000){
 					//When here --> done reading mic. data
 					HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_RESET);
 					firstPass = 1; //set it ready for next Pass
+					audioIndex = 0;
 					state = 3;
 				}
 				
@@ -399,37 +398,7 @@ static void MX_ADC1_Init(void)
   }
 
 }
-/* TIM2 init function ADC timer*/
-static void MX_TIM2_Init(void)
-{
 
-  TIM_ClockConfigTypeDef sClockSourceConfig;
-  TIM_MasterConfigTypeDef sMasterConfig;
-
-  htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 10;
-  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 10;
-  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-}
 
 
 /** Configure pins as 
@@ -614,6 +583,8 @@ void initializeACC(void){
 }
 
 int accStable(void){
+	float tempMaxX, tempMaxY, tempMaxZ = -INFINITY;
+	float tempMinX, tempMinY, tempMinZ = INFINITY;
 	stable = 0;
 	for(int i=0; i<windowSize; i++){
 		//update tempMin
@@ -623,7 +594,7 @@ int accStable(void){
 		if(accYY[i] < tempMinY){
 			tempMinY = accYY[i];
 		}
-		if(accYY[i] < tempMinZ){
+		if(accZZ[i] < tempMinZ){
 			tempMinZ = accZZ[i];
 		}
 		//update tempMax
@@ -646,18 +617,31 @@ int accStable(void){
 
 int readTap(void){
 	int tappy = 0;
-	tempMax = -INFINITY;
-	tempMin = INFINITY;
+	float tempMaxY, tempMaxX, tempMaxZ = -INFINITY;					//Used for readTap() for maximum and minumum evaluation
+	float tempMinY, tempMinX, tempMinZ = INFINITY;
 	for(int i=0; i<windowSize; i++){
-		if(accYY[i] < tempMin){
-			tempMin = accYY[i];
+		if(accYY[i] < tempMinY){
+			tempMinY = accYY[i];
 		}
-		if(accYY[i] > tempMax){
-			tempMax = accYY[i];
+		if(accYY[i] > tempMaxY){
+			tempMaxY = accYY[i];
+		}
+		if(accXX[i] < tempMinX){
+			tempMinX = accXX[i];
+		}
+		if(accXX[i] > tempMaxX){
+			tempMaxX = accXX[i];
+		}
+		if(accZZ[i] < tempMinZ){
+			tempMinZ = accZZ[i];
+		}
+		if(accZZ[i] > tempMaxZ){
+			tempMaxZ = accZZ[i];
 		}
 	}
-	if((fabs(tempMax) - fabs(tempMin)) > 40){
+	if((fabs(tempMaxY) - fabs(tempMinY)) > 40 || (fabs(tempMaxX) -fabs(tempMinX) > 40) || (fabs(tempMaxZ) - fabs(tempMinZ) > 40)){
 		tappy =1;
+	
 	}
 	return tappy;
 }

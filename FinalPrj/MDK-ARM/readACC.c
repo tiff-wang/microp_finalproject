@@ -17,8 +17,8 @@ extern uint8_t MyFlag;
 extern int windowSize;
 extern int state;
 
-extern float tempMax, tempMin;
-extern int tappy;
+//extern float tempMax, tempMin;
+//extern int tappy;
 extern int foundTap;
 extern int nbValues;
 
