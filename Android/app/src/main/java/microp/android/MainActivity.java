@@ -9,10 +9,10 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
-import android.bluetooth.le.ScanCallback;
-import android.bluetooth.le.ScanFilter;
-import android.bluetooth.le.ScanResult;
-import android.bluetooth.le.ScanSettings;
+//import android.bluetooth.le.ScanCallback;
+//import android.bluetooth.le.ScanFilter;
+//import android.bluetooth.le.ScanResult;
+//import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -22,6 +22,7 @@ import android.content.Intent;
 import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -31,6 +32,12 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.storage.*;
 import java.io.*;
+
+import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat;
+import no.nordicsemi.android.support.v18.scanner.ScanCallback;
+import no.nordicsemi.android.support.v18.scanner.ScanFilter;
+import no.nordicsemi.android.support.v18.scanner.ScanSettings;
+import no.nordicsemi.android.support.v18.scanner.ScanResult;
 
 public class MainActivity extends AppCompatActivity {
     FirebaseStorage storage = FirebaseStorage.getInstance();
@@ -45,6 +52,7 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothAdapter bluetoothAdapter;
     private ScanCallback scanCallback;
     private BluetoothLeScanner bleScanner;
+    private BluetoothLeScannerCompat bleScannerCompat;
     private BluetoothGatt gatt;
     private BluetoothGattCallback gattCallback;
     private static int REQUEST_ENABLE_BT = 1;
@@ -78,6 +86,19 @@ public class MainActivity extends AppCompatActivity {
                 connectDevice(result.getDevice().getAddress());
                 // if you implement a RecyclerView inside your fragment or Activity for scanning, write an addDevice method in its corresponding Adapter class and call that method as following. Otherwise no need to include this statement.
 //                mRecyclerViewAdapter.addDevice(result.getDevice().getAddress(), result.getDevice().getName());
+            }
+
+            @Override
+            public void onBatchScanResults(List<ScanResult> results) {
+                Log.i("ble", "Batch scan callback called");
+                Log.i("ble", Integer.toString(results.size()));
+            }
+
+            @Override
+            public void onScanFailed(int errorCode) {
+                super.onScanFailed(errorCode);
+                Log.i("ble", "Scan Failed");
+                Log.i("ble", Integer.toString(errorCode));
             }
         };
 
@@ -141,15 +162,21 @@ public class MainActivity extends AppCompatActivity {
     private void startScan() {
         Log.i("ble", "Start scan");
 
-        if (bleScanner == null)
-            bleScanner = bluetoothAdapter.getBluetoothLeScanner();
+        if (bleScannerCompat == null) {
+//            bleScanner = bluetoothAdapter.getBluetoothLeScanner();
+            bleScannerCompat = BluetoothLeScannerCompat.getScanner();
+        }
 
         // Start the scan in low latency mode
-        bleScanner.startScan(new ArrayList<ScanFilter>(), new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build(), scanCallback);
+
+//        bleScanner.startScan(new ArrayList<ScanFilter>(), new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build(), scanCallback);
+        bleScannerCompat.startScan(scanCallback);
     }
 
     private void stopScan() {
-        bleScanner.stopScan(scanCallback);
+        Log.i("ble", "Stop scan");
+        bleScannerCompat.stopScan(scanCallback);
+//        bleScanner.stopScan(scanCallback);
     }
 
     private void connectDevice(String address) {
