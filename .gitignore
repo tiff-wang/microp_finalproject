@@ -1,2 +1,11 @@
 .idea
 firebase-functions/functions/node_modules/
+
+*
+!*.c
+!*.s
+!*.ioc
+!*.mxproject
+!*/
+*/Drivers/
+*/MDK-ARM/

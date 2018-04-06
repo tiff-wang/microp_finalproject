@@ -57,7 +57,7 @@ ADC_HandleTypeDef hadc1;
 	//Tap detection
 	int tap = 0;
 	int accCounter = 0;									//Used for double tap detection
-	int minThreshold = 150;							//Gap need to be determined --> counter uses HAL_GetTick()
+	int minThreshold = 180;							//Gap need to be determined --> counter uses HAL_GetTick()
 	int maxThreshold = 1500;
 	int boolFirstPass = 1; 							//Boolean serving to tell that first tap occured
 	int previousTap = -1;								//Served to check when was the first tap was done
@@ -99,8 +99,9 @@ float getRoll(float x, float y, float z);
 void readACC(void);
 int readTap(void);
 int accStable(void);
-//ADC??????????????????????????????????????
-extern void ADC_IRQHandler(void);
+
+	
+	
 //Blinky
 void blinky(int N);
 
@@ -205,8 +206,10 @@ int main(void)
 				//allow some delay (500ms)
 				if(HAL_GetTick() - prevCNT > 500){
 					//Set an interrupt or pullforconversion?
-					ADC_IRQHandler();
-					audioBuffer[audioIndex] = firADC;
+					HAL_ADC_Start_IT(&hadc1);
+					int adc = HAL_ADC_GetValue(&hadc1);
+					printf("adc %i \n", adc);
+					//audioBuffer[audioIndex] = firADC;
 					//printf("audio %f \n", audioBuffer[audioIndex]);
 					audioIndex ++;
 				}
@@ -372,12 +375,12 @@ static void MX_ADC1_Init(void)
     */
   hadc1.Instance = ADC1;
   hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
-  hadc1.Init.Resolution = ADC_RESOLUTION_10B;
+  hadc1.Init.Resolution = ADC_RESOLUTION_8B;
   hadc1.Init.ScanConvMode = DISABLE;
-  hadc1.Init.ContinuousConvMode = ENABLE;
+  hadc1.Init.ContinuousConvMode = DISABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
-  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
-  hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T2_TRGO;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc1.Init.NbrOfConversion = 1;
   hadc1.Init.DMAContinuousRequests = DISABLE;
@@ -391,7 +394,7 @@ static void MX_ADC1_Init(void)
     */
   sConfig.Channel = ADC_CHANNEL_1;
   sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
