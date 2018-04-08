@@ -46,10 +46,12 @@
 LIS3DSH_InitTypeDef 		Acc_instance;
 ADC_HandleTypeDef hadc1;
 
+TIM_HandleTypeDef htim2;
+
 /* User Private variables ---------------------------------------------------------*/
 	//ACC.
-	uint8_t status;							// What does this status represent???
-	float Buffer[3];						// Buffer[3] for what???
+	uint8_t status;							
+	float Buffer[3];						// Buffer for x,y and z for readACC
 	float accX, accY, accZ;
 	uint8_t MyFlag = 0;					// Flagging system used for??? --> gets updated in SysTick_Handler --> 50Hz???
 	//General Logic
@@ -73,8 +75,8 @@ ADC_HandleTypeDef hadc1;
 	//MIC
 	int firstPass = 1; //boolean for allowing 1 sec delay before reading mic. data
 	int prevCNT = 0; 	 //Counter for allowing 1 sec delay before reading mic. data + use for timing the number return (N) for LED -BLINKY()
-	float firADC = 0.0;
-	float audioBuffer[10000] = {0};
+	int audioIndexSize =10000;
+	int audioBuffer[10000] = {0};
 	int audioIndex = 0 ;
 	//int adcReadings =0;							//Use for testing purposes (print)
 	int audioBool =0; 							//Boolean for audio reading (used in state 3)
@@ -83,6 +85,8 @@ ADC_HandleTypeDef hadc1;
 	float roll[1000] ={0};
 	//Blinky
 	int nbBlink = 0;
+	
+	int ADC_RES = 12;
 	
 	
 
@@ -95,11 +99,18 @@ void initializeACC			(void);
 static void MX_ADC1_Init(void);
 float getPitch(float x, float y, float z);
 float getRoll(float x, float y, float z);
+float FIR_C(int Input);
+	
+static void MX_TIM2_Init(void);
 	
 void readACC(void);
 int readTap(void);
 int accStable(void);
 
+int newValueRdy = 0;
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
+  newValueRdy = 1;
+}
 	
 	
 //Blinky
@@ -115,9 +126,12 @@ int main(void)
   MX_GPIO_Init();
 	initializeACC	();	// Like any other peripheral, you need to initialize it. Refer to the its driver to learn more.
 	MX_ADC1_Init();
+	MX_TIM2_Init();
+	HAL_TIM_Base_Start(&htim2); //Starts the TIM Base generation for tim2  --> ADC
 	HAL_ADC_Start_IT(&hadc1);
 	// and example of sending a data through UART, but you need to configure the UART block:
 	// HAL_UART_Transmit(&huart2,"FinalProject\n",14,2000); 
+	
 
 
   while (1)
@@ -144,7 +158,7 @@ int main(void)
 					}
 				nbValues = 0;
 				}
-				if(stableNb > 50){
+				if(stableNb > 20){
 					state =1;
 					stableNb = 0;
 				}
@@ -200,37 +214,47 @@ int main(void)
 					firstPass = 0;
 					audioBool = 1;				//use for ensuring the right data gets sent on state 3
 					prevCNT = HAL_GetTick();
-					HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_SET);	//ORANGE LED
 				}
 				
-				//allow some delay (500ms)
-				if(HAL_GetTick() - prevCNT > 500){
-					//Set an interrupt or pullforconversion?
-					HAL_ADC_Start_IT(&hadc1);
+				//allow some delay (800ms)
+				if(HAL_GetTick() - prevCNT > 800){
+					HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_SET);	//ORANGE LED
+					//Set an interrupt
+					/*
+					HAL_ADC_Start(&hadc1);
 					int adc = HAL_ADC_GetValue(&hadc1);
-					printf("adc %i \n", adc);
-					//audioBuffer[audioIndex] = firADC;
-					//printf("audio %f \n", audioBuffer[audioIndex]);
+					//float firADC = 300* adc /((1<< ADC_RES) - 1);
+					//firADC = FIR_C(adc);
+				//	printf("adc %i \n", adc);
+					audioBuffer[audioIndex] = adc;
+					printf("audioBuffer %i \n", audioBuffer[audioIndex]);
 					audioIndex ++;
+					*/
+					
+					/*
+					HAL_ADC_Start(&hadc1);
+					if(newValueRdy){
+						audioBuffer[audioIndex] = HAL_ADC_GetValue(&hadc1);
+						printf("audio %i \n", audioBuffer[audioIndex]);
+						audioIndex++;
+						newValueRdy =0;
+					}
+
+					*/
+					int numb = HAL_ADC_PollForConversion(&hadc1, audioIndexSize);
+					printf("numb %i \n", numb);
+					
+					while(HAL_ADC_PollForConversion(&hadc1, audioIndexSize) == HAL_OK){
+				  audioBuffer[audioIndex] = HAL_ADC_GetValue(&hadc1);
+					printf("audio %i \n", audioBuffer[audioIndex]);
+					audioIndex++;
+					}
 				}
 				
-				/*
-				if(HAL_GetTick() - prevCNT > 1000){
-					HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_SET);	//ORANGE LED
-					HAL_ADC_Start(&hadc1); 
-					
-					//MUST PUT IN BYTE
-					int i = -1;
-					while(HAL_ADC_PollForConversion(&hadc1, 10000) == HAL_OK){
-						i++;
-						adcReadings = HAL_ADC_GetValue(&hadc1);
-						audioBuffer[i] = adcReadings;
-						printf("audio %i \n", audioBuffer[i]);
-					}
-					*/
-				if(audioIndex > 10000){
+				if(audioIndex >= audioIndexSize){
 					//When here --> done reading mic. data
 					HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_RESET);
+					HAL_ADC_Stop(&hadc1);
 					firstPass = 1; //set it ready for next Pass
 					audioIndex = 0;
 					state = 3;
@@ -298,7 +322,7 @@ int main(void)
 					//send data --> go to state 3
 					
 					HAL_GPIO_WritePin(GPIOD, LD5_Pin, GPIO_PIN_RESET);	//RED LED
-					printf("pitch[0]: %4f    roll[0]: %4f     nbValues: %i\n", pitch[0], roll[0], nbValues);
+					//printf("pitch[0]: %4f    roll[0]: %4f     nbValues: %i\n", pitch[0], roll[0], nbValues);
 					//printf("pitch[12]: %4f    roll[12]: %4f     nbValues: %i\n", pitch[12], roll[12], nbValues);
 					
 					nbValues = 0;
@@ -365,6 +389,39 @@ void SystemClock_Config(void)
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 }
 
+/* TIM2 init function */
+static void MX_TIM2_Init(void)
+{
+  TIM_ClockConfigTypeDef sClockSourceConfig;
+  TIM_MasterConfigTypeDef sMasterConfig;
+	
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 1;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 1;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+}
+
 /* ADC1 init function */
 static void MX_ADC1_Init(void)
 {
@@ -375,16 +432,16 @@ static void MX_ADC1_Init(void)
     */
   hadc1.Instance = ADC1;
   hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
-  hadc1.Init.Resolution = ADC_RESOLUTION_8B;
+  hadc1.Init.Resolution = ADC_RESOLUTION_12B;
   hadc1.Init.ScanConvMode = DISABLE;
-  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.ContinuousConvMode = ENABLE;	//DISABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
-  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING; // _NONE
+  hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIG2_T2_TRGO; // ADC_SOFTWARE_START
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc1.Init.NbrOfConversion = 1;
   hadc1.Init.DMAContinuousRequests = DISABLE;
-  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;	
+  hadc1.Init.EOCSelection = DISABLE; //ADC_EOC_SINGLE_CONV;	
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
@@ -394,7 +451,7 @@ static void MX_ADC1_Init(void)
     */
   sConfig.Channel = ADC_CHANNEL_1;
   sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES; // 480CYCLES
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
@@ -642,7 +699,7 @@ int readTap(void){
 			tempMaxZ = accZZ[i];
 		}
 	}
-	if((fabs(tempMaxY) - fabs(tempMinY)) > 40 || (fabs(tempMaxX) -fabs(tempMinX) > 40) || (fabs(tempMaxZ) - fabs(tempMinZ) > 40)){
+	if((fabs(tempMaxY) - fabs(tempMinY)) > 50 || (fabs(tempMaxX) -fabs(tempMinX) > 50) || (fabs(tempMaxZ) - fabs(tempMinZ) > 50)){
 		tappy =1;
 	
 	}
@@ -667,6 +724,26 @@ void blinky(int N){
 		}
 	}
 	HAL_GPIO_WritePin(GPIOD, LD5_Pin, GPIO_PIN_RESET);
+}
+
+// Initializing variable and arrays for FIR FILTER
+int previousValues[4] = { 0, 0, 0, 0 }; //1st input is stored in position 0, the 2nd input into position 1, and so on. When array is full, restart at position 0.
+float coeffs[5] = { 0.0246, 0.2344, 0.4821, 0.2344, 0.0246 }; //PRE-DEFINED CONSTANTS 4th order from matlab fir1()
+
+int idx = 3;
+
+
+float FIR_C(int Input) {
+	float filtered = coeffs[0] * Input
+		+ coeffs[1] * previousValues[idx % 4]
+		+ coeffs[2] * previousValues[(idx + 3) % 4]
+		+ coeffs[3] * previousValues[(idx + 2) % 4]
+		+ coeffs[4] * previousValues[(idx + 1) % 4];
+	
+	idx++;
+	idx %= 4;
+	previousValues[idx] = Input;
+	return filtered;
 }
 /* USER CODE END 4 */
 

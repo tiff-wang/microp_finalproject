@@ -36,12 +36,14 @@
 #include "stm32f4xx_it.h"
 
 /* USER CODE BEGIN 0 */
-float FIR_C(int Input);
-
 extern uint8_t MyFlag;
 extern int accCounter;
+extern int audioBuffer[];
+extern int bufferIndex;
 extern ADC_HandleTypeDef hadc1;
-extern float firADC;
+extern int adcSampling;
+extern int audioIndex;
+
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
@@ -76,37 +78,19 @@ void SysTick_Handler(void)
 void ADC_IRQHandler(void)
 {
   /* USER CODE BEGIN ADC_IRQn 0 */
-
+	//int adc = HAL_ADC_GetValue(&hadc1);
+	//printf("adc reading: %i\n", adc);
   /* USER CODE END ADC_IRQn 0 */
   HAL_ADC_IRQHandler(&hadc1);
-	//int micData = HAL_ADC_GetValue(&hadc1);
-	//printf("micData %i \n", micData);
 
-	//firADC = FIR_C(micData);
+	
 	 /* USER CODE BEGIN ADC_IRQn 1 */
 
   /* USER CODE END ADC_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */
-// Initializing variable and arrays for FIR FILTER
-int previousValues[4] = { 0, 0, 0, 0 }; //1st input is stored in position 0, the 2nd input into position 1, and so on. When array is full, restart at position 0.
-float coeffs[5] = { 0.0246, 0.2344, 0.4821, 0.2344, 0.0246 }; //PRE-DEFINED CONSTANTS 4th order from matlab fir1()
 
-int idx = 3;
-
-float FIR_C(int Input) {
-	float filtered = coeffs[0] * Input
-		+ coeffs[1] * previousValues[idx % 4]
-		+ coeffs[2] * previousValues[(idx + 3) % 4]
-		+ coeffs[3] * previousValues[(idx + 2) % 4]
-		+ coeffs[4] * previousValues[(idx + 1) % 4];
-	
-	idx++;
-	idx %= 4;
-	previousValues[idx] = Input;
-	return filtered;
-}
 
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
