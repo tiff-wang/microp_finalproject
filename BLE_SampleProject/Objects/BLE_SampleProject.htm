@@ -3,9 +3,9 @@
 <title>Static Call Graph - [.\Objects\BLE_SampleProject.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image .\Objects\BLE_SampleProject.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5050169: Last Updated: Wed Apr 11 17:40:07 2018
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5050169: Last Updated: Wed Apr 11 18:39:38 2018
 <BR><P>
-<H3>Maximum Stack Usage =       1064 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
+<H3>Maximum Stack Usage =       1072 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
 __rt_entry_main &rArr; main &rArr; getBlueNRGVersion &rArr; HCI_Process &rArr; HCI_Event_CB &rArr; Read_Request_CB &rArr; Acc_Update &rArr; aci_gatt_update_char_value &rArr; hci_send_req &rArr; hci_send_cmd &rArr; hci_write &rArr; Hal_Write_Serial &rArr; BlueNRG_SPI_Write &rArr; HAL_SPI_TransmitReceive &rArr; SPI_WaitOnFlagUntilTimeout
 <P>
@@ -260,7 +260,7 @@ Global Symbols
 <P><STRONG><a name="[122]"></a>__rt_entry_postsh_1</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, __rtentry2.o(.ARM.Collect$$rtentry$$00000009))
 
 <P><STRONG><a name="[68]"></a>__rt_entry_main</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, __rtentry2.o(.ARM.Collect$$rtentry$$0000000D))
-<BR><BR>[Stack]<UL><LI>Max Depth = 1064 + Unknown Stack Size
+<BR><BR>[Stack]<UL><LI>Max Depth = 1072 + Unknown Stack Size
 <LI>Call Chain = __rt_entry_main &rArr; main &rArr; getBlueNRGVersion &rArr; HCI_Process &rArr; HCI_Event_CB &rArr; Read_Request_CB &rArr; Acc_Update &rArr; aci_gatt_update_char_value &rArr; hci_send_req &rArr; hci_send_cmd &rArr; hci_write &rArr; Hal_Write_Serial &rArr; BlueNRG_SPI_Write &rArr; HAL_SPI_TransmitReceive &rArr; SPI_WaitOnFlagUntilTimeout
 </UL>
 <BR>[Calls]<UL><LI><a href="#[69]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
@@ -949,8 +949,8 @@ Global Symbols
 
 <P><STRONG><a name="[13b]"></a>__rt_errno_addr$intlibspace</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, rt_errno_addr_intlibspace.o(.text), UNUSED)
 
-<P><STRONG><a name="[a4]"></a>Acc_Update</STRONG> (Thumb, 122 bytes, Stack size 32 bytes, sensor_service.o(i.Acc_Update))
-<BR><BR>[Stack]<UL><LI>Max Depth = 768 + Unknown Stack Size
+<P><STRONG><a name="[a4]"></a>Acc_Update</STRONG> (Thumb, 194 bytes, Stack size 40 bytes, sensor_service.o(i.Acc_Update))
+<BR><BR>[Stack]<UL><LI>Max Depth = 776 + Unknown Stack Size
 <LI>Call Chain = Acc_Update &rArr; aci_gatt_update_char_value &rArr; hci_send_req &rArr; hci_send_cmd &rArr; hci_write &rArr; Hal_Write_Serial &rArr; BlueNRG_SPI_Write &rArr; HAL_SPI_TransmitReceive &rArr; SPI_WaitOnFlagUntilTimeout
 </UL>
 <BR>[Calls]<UL><LI><a href="#[a5]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;aci_gatt_update_char_value
@@ -1287,7 +1287,7 @@ Global Symbols
 </UL>
 
 <P><STRONG><a name="[d3]"></a>HCI_Event_CB</STRONG> (Thumb, 106 bytes, Stack size 24 bytes, sensor_service.o(i.HCI_Event_CB))
-<BR><BR>[Stack]<UL><LI>Max Depth = 824 + Unknown Stack Size
+<BR><BR>[Stack]<UL><LI>Max Depth = 832 + Unknown Stack Size
 <LI>Call Chain = HCI_Event_CB &rArr; Read_Request_CB &rArr; Acc_Update &rArr; aci_gatt_update_char_value &rArr; hci_send_req &rArr; hci_send_cmd &rArr; hci_write &rArr; Hal_Write_Serial &rArr; BlueNRG_SPI_Write &rArr; HAL_SPI_TransmitReceive &rArr; SPI_WaitOnFlagUntilTimeout
 </UL>
 <BR>[Calls]<UL><LI><a href="#[d4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Read_Request_CB
@@ -1322,7 +1322,7 @@ Global Symbols
 </UL>
 
 <P><STRONG><a name="[dd]"></a>HCI_Process</STRONG> (Thumb, 116 bytes, Stack size 144 bytes, hci.o(i.HCI_Process))
-<BR><BR>[Stack]<UL><LI>Max Depth = 968 + Unknown Stack Size
+<BR><BR>[Stack]<UL><LI>Max Depth = 976 + Unknown Stack Size
 <LI>Call Chain = HCI_Process &rArr; HCI_Event_CB &rArr; Read_Request_CB &rArr; Acc_Update &rArr; aci_gatt_update_char_value &rArr; hci_send_req &rArr; hci_send_cmd &rArr; hci_write &rArr; Hal_Write_Serial &rArr; BlueNRG_SPI_Write &rArr; HAL_SPI_TransmitReceive &rArr; SPI_WaitOnFlagUntilTimeout
 </UL>
 <BR>[Calls]<UL><LI><a href="#[d3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HCI_Event_CB
@@ -1434,7 +1434,7 @@ Global Symbols
 </UL>
 
 <P><STRONG><a name="[d4]"></a>Read_Request_CB</STRONG> (Thumb, 210 bytes, Stack size 32 bytes, sensor_service.o(i.Read_Request_CB))
-<BR><BR>[Stack]<UL><LI>Max Depth = 800 + Unknown Stack Size
+<BR><BR>[Stack]<UL><LI>Max Depth = 808 + Unknown Stack Size
 <LI>Call Chain = Read_Request_CB &rArr; Acc_Update &rArr; aci_gatt_update_char_value &rArr; hci_send_req &rArr; hci_send_cmd &rArr; hci_write &rArr; Hal_Write_Serial &rArr; BlueNRG_SPI_Write &rArr; HAL_SPI_TransmitReceive &rArr; SPI_WaitOnFlagUntilTimeout
 </UL>
 <BR>[Calls]<UL><LI><a href="#[e9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;aci_gatt_allow_read
@@ -1500,8 +1500,8 @@ Global Symbols
 <LI><a href="#[f1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;hci_send_req
 </UL>
 
-<P><STRONG><a name="[ec]"></a>User_Process</STRONG> (Thumb, 52 bytes, Stack size 8 bytes, main.o(i.User_Process))
-<BR><BR>[Stack]<UL><LI>Max Depth = 776 + Unknown Stack Size
+<P><STRONG><a name="[ec]"></a>User_Process</STRONG> (Thumb, 498 bytes, Stack size 8 bytes, main.o(i.User_Process))
+<BR><BR>[Stack]<UL><LI>Max Depth = 784 + Unknown Stack Size
 <LI>Call Chain = User_Process &rArr; Acc_Update &rArr; aci_gatt_update_char_value &rArr; hci_send_req &rArr; hci_send_cmd &rArr; hci_write &rArr; Hal_Write_Serial &rArr; BlueNRG_SPI_Write &rArr; HAL_SPI_TransmitReceive &rArr; SPI_WaitOnFlagUntilTimeout
 </UL>
 <BR>[Calls]<UL><LI><a href="#[ed]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;setConnectable
@@ -1685,7 +1685,7 @@ Global Symbols
 <BR>[Address Reference Count : 1]<UL><LI> _printf_char_file.o(.text)
 </UL>
 <P><STRONG><a name="[f8]"></a>getBlueNRGVersion</STRONG> (Thumb, 86 bytes, Stack size 40 bytes, bluenrg_utils_small.o(i.getBlueNRGVersion))
-<BR><BR>[Stack]<UL><LI>Max Depth = 1008 + Unknown Stack Size
+<BR><BR>[Stack]<UL><LI>Max Depth = 1016 + Unknown Stack Size
 <LI>Call Chain = getBlueNRGVersion &rArr; HCI_Process &rArr; HCI_Event_CB &rArr; Read_Request_CB &rArr; Acc_Update &rArr; aci_gatt_update_char_value &rArr; hci_send_req &rArr; hci_send_cmd &rArr; hci_write &rArr; Hal_Write_Serial &rArr; BlueNRG_SPI_Write &rArr; HAL_SPI_TransmitReceive &rArr; SPI_WaitOnFlagUntilTimeout
 </UL>
 <BR>[Calls]<UL><LI><a href="#[dd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HCI_Process
@@ -1829,7 +1829,7 @@ Global Symbols
 </UL>
 
 <P><STRONG><a name="[69]"></a>main</STRONG> (Thumb, 336 bytes, Stack size 56 bytes, main.o(i.main))
-<BR><BR>[Stack]<UL><LI>Max Depth = 1064 + Unknown Stack Size
+<BR><BR>[Stack]<UL><LI>Max Depth = 1072 + Unknown Stack Size
 <LI>Call Chain = main &rArr; getBlueNRGVersion &rArr; HCI_Process &rArr; HCI_Event_CB &rArr; Read_Request_CB &rArr; Acc_Update &rArr; aci_gatt_update_char_value &rArr; hci_send_req &rArr; hci_send_cmd &rArr; hci_write &rArr; Hal_Write_Serial &rArr; BlueNRG_SPI_Write &rArr; HAL_SPI_TransmitReceive &rArr; SPI_WaitOnFlagUntilTimeout
 </UL>
 <BR>[Calls]<UL><LI><a href="#[f8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;getBlueNRGVersion

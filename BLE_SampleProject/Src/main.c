@@ -66,12 +66,13 @@
 extern volatile uint8_t set_connectable;
 extern volatile int connected;
 extern AxesRaw_t axes_data;
-extern volatile uint8_t transmitType; //0 for voice, 1 for accelerometer find: ISAAC
+int transmitType = 0; //0 for voice, 1 for accelerometer find: ISAAC TODO: Make it not 0
 typedef short int_16;
 uint8_t bnrg_expansion_board = IDB04A1; /* at startup, suppose the X-NUCLEO-IDB04A1 is used */
 short test_array[40] = {1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0}; //TODO: Delete test array and create 2 different arrays that would
 	//store the voice or accelerometer data for transmission
 int iter = -1;
+int delay_time = 600000;
 /**
  * @}
  */
@@ -339,7 +340,7 @@ void User_Process(AxesRaw_t* p_axes)
 					p_axes->I = 2;
 					p_axes->J = 1;
 				}
-				for(int i = 0; i<600000; i++){ //delay hyperparameter tuning
+				for(int i = 0; i<delay_time; i++){ //delay hyperparameter tuning
 				}
 				iter++;
 			}
@@ -355,6 +356,8 @@ void User_Process(AxesRaw_t* p_axes)
 				p_axes->I = test_array[iter*10+8];
 				p_axes->J = test_array[iter*10+9];
 				iter++;
+				for(int i = 0; i<delay_time; i++){ //delay hyperparameter tuning
+				}
 			}
 			else{ //ending sequence
 				p_axes->A = 100;
@@ -368,6 +371,8 @@ void User_Process(AxesRaw_t* p_axes)
 				p_axes->I = 92;
 				p_axes->J = 91;
 				iter = -1;
+				for(int i = 0; i<delay_time; i++){ //delay hyperparameter tuning
+				}
 				
 				//TODO: Escape to UART Polling mode. 
 			}

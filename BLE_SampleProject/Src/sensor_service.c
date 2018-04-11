@@ -148,7 +148,7 @@ tBleStatus Add_Acc_Service(void)
   if (ret != BLE_STATUS_SUCCESS) goto fail;
   
   COPY_ACC_UUID(uuid);  
-  ret =  aci_gatt_add_char(accServHandle, UUID_TYPE_128, uuid, 10, //amount of packets here, find: ISAAC
+  ret =  aci_gatt_add_char(accServHandle, UUID_TYPE_128, uuid, 20, //amount of packets here, find: ISAAC
                            CHAR_PROP_NOTIFY|CHAR_PROP_READ,
                            ATTR_PERMISSION_NONE,
                            GATT_NOTIFY_READ_REQ_AND_WAIT_FOR_APPL_RESP,
@@ -195,19 +195,24 @@ tBleStatus Free_Fall_Notify(void)
  tBleStatus Acc_Update(AxesRaw_t *data)
 {  
   tBleStatus ret;    
-  uint8_t buff[10]; //modify this in terms of numbers of "AXES" multiplied by 2
+  uint8_t buff[20]; //modify this in terms of numbers of "AXES" multiplied by 2
     
 	
 	/*
 	Increment each of buffs by 2 for each new 16 bit int
 	*/
-  STORE_LE_16(buff,data->AXIS_X);
-  STORE_LE_16(buff+2,data->AXIS_Y);
-  STORE_LE_16(buff+4,data->AXIS_Z);
-	STORE_LE_16(buff+6,data->AXIS_A);
-	STORE_LE_16(buff+8,data->AXIS_B); 
+  STORE_LE_16(buff,data->A);
+  STORE_LE_16(buff+2,data->B);
+  STORE_LE_16(buff+4,data->C);
+	STORE_LE_16(buff+6,data->D);
+	STORE_LE_16(buff+8,data->E);
+  STORE_LE_16(buff+10,data->F);
+  STORE_LE_16(buff+12,data->G);
+	STORE_LE_16(buff+14,data->H);
+	STORE_LE_16(buff+16,data->I); 
+	STORE_LE_16(buff+18, data->J);
 	
-  ret = aci_gatt_update_char_value(accServHandle, accCharHandle, 0, 10, buff); //modify the 4th parameter to allow for number of bytes transmitted
+  ret = aci_gatt_update_char_value(accServHandle, accCharHandle, 0, 20, buff); //modify the 4th parameter to allow for number of bytes transmitted
 	
   if (ret != BLE_STATUS_SUCCESS){
     PRINTF("Error while updating ACC characteristic.\n") ;

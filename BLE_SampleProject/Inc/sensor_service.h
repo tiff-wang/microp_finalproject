@@ -104,11 +104,16 @@ typedef unsigned short ui16_t;
  * @brief Structure containing acceleration value (in mg) of each axis.
  */
 typedef struct {
-  ui16_t AXIS_X; //Add more i16_t's here if we want to add more values to string we can send, capped at 20 bytes which is equivalent to 5 of these integers.
-  i16_t AXIS_Y; //find: ISAAC
-  i16_t AXIS_Z;
-	i16_t AXIS_A;
-	i16_t AXIS_B;
+  i16_t A; //Add more i16_t's here if we want to add more values to string we can send, capped at 20 bytes which is equivalent to 5 of these integers.
+  i16_t B; //find: ISAAC
+  i16_t C;
+	i16_t D;
+	i16_t E;
+	i16_t F;
+	i16_t G;
+	i16_t H;
+	i16_t I;
+	i16_t J;
 } AxesRaw_t;
 /**
  * @}
