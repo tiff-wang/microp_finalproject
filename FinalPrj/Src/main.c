@@ -43,7 +43,7 @@
 #include <stdio.h>
 /* Private variables ---------------------------------------------------------*/
 
-LIS3DSH_InitTypeDef 		Acc_instance;
+LIS3DSH_InitTypeDef Acc_instance;
 ADC_HandleTypeDef hadc1;
 
 TIM_HandleTypeDef htim2;
@@ -59,7 +59,7 @@ TIM_HandleTypeDef htim2;
 	//Tap detection
 	int tap = 0;
 	int accCounter = 0;									//Used for double tap detection
-	int minThreshold = 180;							//Gap need to be determined --> counter uses HAL_GetTick()
+	int minThreshold = 230;							//Gap need to be determined --> counter uses HAL_GetTick()
 	int maxThreshold = 1500;
 	int boolFirstPass = 1; 							//Boolean serving to tell that first tap occured
 	int previousTap = -1;								//Served to check when was the first tap was done
@@ -75,11 +75,12 @@ TIM_HandleTypeDef htim2;
 	//MIC
 	int firstPass = 1; //boolean for allowing 1 sec delay before reading mic. data
 	int prevCNT = 0; 	 //Counter for allowing 1 sec delay before reading mic. data + use for timing the number return (N) for LED -BLINKY()
-	int audioIndexSize =10000;
-	int audioBuffer[10000] = {0};
+	int audioBufferSize =12000;
+	int audioBuffer[12000] = {0};
 	int audioIndex = 0 ;
 	//int adcReadings =0;							//Use for testing purposes (print)
 	int audioBool =0; 							//Boolean for audio reading (used in state 3)
+	int audioDone = 0;
 	//Discovery board - pitch and roll
 	float pitch[1000] = {0};
 	float roll[1000] ={0};
@@ -107,9 +108,18 @@ void readACC(void);
 int readTap(void);
 int accStable(void);
 
-int newValueRdy = 0;
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
-  newValueRdy = 1;
+	
+	audioBuffer[audioIndex] = HAL_ADC_GetValue(&hadc1);
+	audioIndex++;
+	
+	if(audioIndex >= audioBufferSize){
+		HAL_ADC_Stop_IT(&hadc1); 
+		HAL_TIM_Base_Stop(&htim2);
+		audioDone = 1;
+	}
 }
 	
 	
@@ -120,15 +130,21 @@ void blinky(int N);
 int main(void)
 {
 
-
+	
+	
   HAL_Init();
   SystemClock_Config();
   MX_GPIO_Init();
 	initializeACC	();	// Like any other peripheral, you need to initialize it. Refer to the its driver to learn more.
 	MX_ADC1_Init();
 	MX_TIM2_Init();
-	HAL_TIM_Base_Start(&htim2); //Starts the TIM Base generation for tim2  --> ADC
-	HAL_ADC_Start_IT(&hadc1);
+	HAL_TIM_Base_Init(&htim2);
+	
+	//HAL_MspInit();
+	//HAL_ADC_MspInit(&hadc1);
+	
+	
+	//HAL_ADC_Start_IT(&hadc1);
 	// and example of sending a data through UART, but you need to configure the UART block:
 	// HAL_UART_Transmit(&huart2,"FinalProject\n",14,2000); 
 	
@@ -146,19 +162,11 @@ int main(void)
 					}
 					//else restart
 					else{
-						/*
-						tempMaxX = -INFINITY;
-						tempMaxY = -INFINITY;
-						tempMaxZ = -INFINITY;
-						tempMinX = INFINITY;
-						tempMinY = INFINITY;
-						tempMinZ = INFINITY;
-						*/
 						stableNb =0;
 					}
 				nbValues = 0;
 				}
-				if(stableNb > 20){
+				if(stableNb > 40){
 					state =1;
 					stableNb = 0;
 				}
@@ -211,52 +219,26 @@ int main(void)
 				//Set sampling frequency to higher than 8K samples/sec
 				//Record Audio
 				if (firstPass){
-					firstPass = 0;
-					audioBool = 1;				//use for ensuring the right data gets sent on state 3
+					firstPass = 0;					//use for ensuring the right data gets sent on state 3
 					prevCNT = HAL_GetTick();
 				}
 				
 				//allow some delay (800ms)
 				if(HAL_GetTick() - prevCNT > 800){
 					HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_SET);	//ORANGE LED
+					HAL_TIM_Base_Start(&htim2); //Starts the TIM Base generation for tim2  --> ADC
+					HAL_ADC_Start_IT(&hadc1);
 					//Set an interrupt
-					/*
-					HAL_ADC_Start(&hadc1);
-					int adc = HAL_ADC_GetValue(&hadc1);
-					//float firADC = 300* adc /((1<< ADC_RES) - 1);
-					//firADC = FIR_C(adc);
-				//	printf("adc %i \n", adc);
-					audioBuffer[audioIndex] = adc;
-					printf("audioBuffer %i \n", audioBuffer[audioIndex]);
-					audioIndex ++;
-					*/
-					
-					/*
-					HAL_ADC_Start(&hadc1);
-					if(newValueRdy){
-						audioBuffer[audioIndex] = HAL_ADC_GetValue(&hadc1);
-						printf("audio %i \n", audioBuffer[audioIndex]);
-						audioIndex++;
-						newValueRdy =0;
-					}
-
-					*/
-					int numb = HAL_ADC_PollForConversion(&hadc1, audioIndexSize);
-					printf("numb %i \n", numb);
-					
-					while(HAL_ADC_PollForConversion(&hadc1, audioIndexSize) == HAL_OK){
-				  audioBuffer[audioIndex] = HAL_ADC_GetValue(&hadc1);
-					printf("audio %i \n", audioBuffer[audioIndex]);
-					audioIndex++;
-					}
 				}
 				
-				if(audioIndex >= audioIndexSize){
+				if(audioDone){
 					//When here --> done reading mic. data
+					printf("audioIndex %i \n", audioIndex);
 					HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_RESET);
-					HAL_ADC_Stop(&hadc1);
 					firstPass = 1; //set it ready for next Pass
 					audioIndex = 0;
+					audioDone = 0;
+					audioBool = 1;
 					state = 3;
 				}
 				
@@ -306,7 +288,7 @@ int main(void)
 				//Wait till receive data from Nucleo Board (N)
 				//If(data.recceived)
 				//int N = data.get;
-				blinky(5);
+				blinky(6);
 				state = 0;
 				//Blink LED2 N times -->blinky(N)
 				break;
@@ -386,7 +368,8 @@ void SystemClock_Config(void)
   HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
 
   /* SysTick_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(EXTI0_IRQn);
 }
 
 /* TIM2 init function */
@@ -396,9 +379,9 @@ static void MX_TIM2_Init(void)
   TIM_MasterConfigTypeDef sMasterConfig;
 	
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 1;
+  htim2.Init.Prescaler = 1051;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 1;
+  htim2.Init.Period = 11;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -434,14 +417,14 @@ static void MX_ADC1_Init(void)
   hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
   hadc1.Init.ScanConvMode = DISABLE;
-  hadc1.Init.ContinuousConvMode = ENABLE;	//DISABLE;
+  hadc1.Init.ContinuousConvMode = DISABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING; // _NONE
   hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIG2_T2_TRGO; // ADC_SOFTWARE_START
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc1.Init.NbrOfConversion = 1;
   hadc1.Init.DMAContinuousRequests = DISABLE;
-  hadc1.Init.EOCSelection = DISABLE; //ADC_EOC_SINGLE_CONV;	
+  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;	
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
