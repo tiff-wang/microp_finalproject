@@ -1,11 +1,13 @@
 package microp.android;
 
+import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
@@ -14,12 +16,18 @@ import android.bluetooth.le.BluetoothLeScanner;
 //import android.bluetooth.le.ScanResult;
 //import android.bluetooth.le.ScanSettings;
 import android.content.Context;
+import android.os.Build;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.Toast;
 import android.content.pm.PackageManager;
 import android.content.Intent;
 import android.util.Log;
+import android.widget.TextView;
+import android.widget.Button;
+import android.view.View;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,15 +65,29 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothGattCallback gattCallback;
     private static int REQUEST_ENABLE_BT = 1;
 
+    private TextView textView;
+    // textView.setText("The new text that I'd like to display now that the user has pushed a button.");
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.i("ble", "Starting main activity");
         setContentView(R.layout.activity_main);
+        textView = (TextView) findViewById(R.id.log);
 
         if(!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
             Toast.makeText(this, R.string.ble_not_supported, Toast.LENGTH_SHORT).show();
             finish();
+        }
+
+        // Prompt for permissions
+        if (Build.VERSION.SDK_INT >= 23) {
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED) {
+                Log.i("ble", "Location access not granted!");
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 2);
+            }
         }
 
         BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
@@ -77,13 +99,25 @@ public class MainActivity extends AppCompatActivity {
             startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
         }
 
+        final Button button = findViewById(R.id.button2);
+        button.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                stopScan();
+                startScan();
+            }
+        });
+
         scanCallback = new ScanCallback() {
             @Override
             public void onScanResult(int callbackType, ScanResult result) {
                 super.onScanResult(callbackType, result);
-                Log.i("ble", "Scan callback called");
+//                Log.i("ble", "Scan callback called");
 
-                connectDevice(result.getDevice().getAddress());
+                if (result.getDevice().getAddress().equals("03:80:E1:00:34:12") && result.getDevice().getName().equals("IsaaNRG")) {
+                    Log.i("ble", "Device \"IsaaNRG\" found");
+                    textView.setText("Device \"IsaaNRG\" found");
+                    connectDevice(result.getDevice().getAddress());
+                }
                 // if you implement a RecyclerView inside your fragment or Activity for scanning, write an addDevice method in its corresponding Adapter class and call that method as following. Otherwise no need to include this statement.
 //                mRecyclerViewAdapter.addDevice(result.getDevice().getAddress(), result.getDevice().getName());
             }
@@ -121,28 +155,42 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onServicesDiscovered(BluetoothGatt gatt, int status) {
                 super.onServicesDiscovered(gatt, status);
+                Log.i("ble", "Gatt callback: onServicesDiscovered");
                 // As soon as services are discovered, acquire characteristic and try enabling
 
                 // TODO Do we need to change these UUIDs for our needs?? What do they do?
                 BluetoothGattService movService = gatt.getService(UUID.fromString("02366E80-CF3A-11E1-9AB4-0002A5D5C51B"));
-                BluetoothGattCharacteristic characteristic = movService.getCharacteristic(UUID.fromString("40A1B80-CF4B-11E1-AC36-0002A5D5C51B"));
-                if (characteristic == null) {
-                    Toast.makeText(activity, R.string.service_not_found, Toast.LENGTH_SHORT).show();
-                    finish();
-                }
+                BluetoothGattCharacteristic characteristic = movService.getCharacteristic(UUID.fromString("340A1B80-CF4B-11E1-AC36-0002A5D5C51B"));
+                if (characteristic != null) {
+                    Log.i("ble", "Characteristic found!");
 
-                gatt.readCharacteristic(characteristic);
-                deviceConnected();
+                    gatt.setCharacteristicNotification(characteristic, true);
+//                    characteristic.getDescriptors();
+                    BluetoothGattDescriptor desc = characteristic.getDescriptor(characteristic.getDescriptors().get(0).getUuid());
+                    Log.i("ble", "Descriptor is " + desc); // this is not null
+                    desc.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                    Log.i("ble", "Descriptor write: " + gatt.writeDescriptor(desc)); // returns true
+
+                    deviceConnected();
+                    gatt.readCharacteristic(characteristic);
+                }
             }
 
             @Override
             public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
                 super.onCharacteristicRead(gatt, characteristic, status);
 
-                Log.i("ble", "onCharacteristicRead");
+//                Log.i("ble", "onCharacteristicRead");
 
-                Log.i("ble", Arrays.toString(characteristic.getValue()));
+//                Log.i("ble", Arrays.toString(characteristic.getValue()));
                 // TODO we received data, handle it
+
+//                gatt.readCharacteristic(characteristic); TODO just removed this, does it still work?
+            }
+
+            @Override
+            public void onCharacteristicChanged(BluetoothGatt bluetoothGatt, BluetoothGattCharacteristic characteristic) {
+                Log.i("ble", Arrays.toString(characteristic.getValue()));
             }
         };
     }
@@ -160,7 +208,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startScan() {
-        Log.i("ble", "Start scan");
+        Log.i("ble", "Starting scan");
+        textView.setText("Scanning for device");
 
         if (bleScannerCompat == null) {
 //            bleScanner = bluetoothAdapter.getBluetoothLeScanner();
@@ -174,20 +223,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void stopScan() {
-        Log.i("ble", "Stop scan");
-        bleScannerCompat.stopScan(scanCallback);
-//        bleScanner.stopScan(scanCallback);
+        Log.i("ble", "Stop scanning");
+        if (bleScannerCompat != null)
+            bleScannerCompat.stopScan(scanCallback);
     }
 
     private void connectDevice(String address) {
-        Log.i("ble", "connectDevice");
+        Log.i("ble", "Connecting Device");
+        textView.setText("Device Connected");
         BluetoothDevice device = bluetoothAdapter.getRemoteDevice(address);
         gatt = device.connectGatt(this, false, gattCallback);
     }
 
     private void deviceConnected() {
         Log.i("ble", "Device connected");
-        // TODO
     }
 
     @Override
