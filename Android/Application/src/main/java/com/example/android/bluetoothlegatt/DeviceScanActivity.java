@@ -42,6 +42,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.UUID;
 
 /**
  * Activity for scanning and displaying available Bluetooth LE devices.
@@ -55,7 +57,7 @@ public class DeviceScanActivity extends ListActivity {
     private static final int REQUEST_ENABLE_BT = 1;
     private static final int MY_PERMISSION_RESPONSE = 2;
     // Stops scanning after 10 seconds.
-    private static final long SCAN_PERIOD = 10000;
+    private static final long SCAN_PERIOD = 100000;
 
     private static final String TAG = "ble";
 
@@ -70,7 +72,7 @@ public class DeviceScanActivity extends ListActivity {
         if (Build.VERSION.SDK_INT >= 23) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
                     != PackageManager.PERMISSION_GRANTED) {
-                Log.w("BleActivity", "Location access not granted!");
+                Log.w(TAG, "Location access not granted!");
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
                         MY_PERMISSION_RESPONSE);
@@ -193,8 +195,13 @@ public class DeviceScanActivity extends ListActivity {
 
             mScanning = true;
             mBluetoothAdapter.startLeScan(mLeScanCallback);
-            // TODO
-//            mBluetoothAdapter.startLeScan(["SOME_SERVICE_UUID"], mLeScanCallback); // Filters to show only devices with correct UUID
+//            UUID[] uuids = new UUID[] {
+//                    UUID.fromString("02366E80-CF3A-11E1-9AB4-0002A5D5C51B"),
+////                    UUID.fromString("E23E78A0-CF4A-11E1-8FFC-0002A5D5C51B"),
+////                    UUID.fromString("340A1B80-CF4B-11E1-AC36-0002A5D5C51B"),
+////                    UUID.fromString("42821A40-E477-11E2-82D0-0002A5D5C51B")
+//            };
+//            mBluetoothAdapter.startLeScan(uuids, mLeScanCallback); // Filters to show only devices with correct UUID
         } else {
             mScanning = false;
             Log.i(TAG, "Stopping BLE scan");
@@ -275,7 +282,12 @@ public class DeviceScanActivity extends ListActivity {
 
         @Override
         public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
-            Log.i(TAG, "onLeScan callback triggered");
+//            Log.i(TAG, "onLeScan callback triggered");
+            if (!device.getAddress().equals("03:80:E1:00:34:12"))
+                return;
+            Log.i(TAG, Integer.toString(rssi));
+            Log.i(TAG, device.getAddress());
+//            Log.i(TAG, Arrays.toString(device.getUuids()));
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {

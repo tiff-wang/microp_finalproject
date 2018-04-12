@@ -38,6 +38,8 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
+import java.util.Arrays;
 
 /**
  * For a given BLE device, this Activity provides the user interface to connect, display data,
@@ -46,7 +48,7 @@ import java.util.List;
  * Bluetooth LE API.
  */
 public class DeviceControlActivity extends Activity {
-    private final static String TAG = DeviceControlActivity.class.getSimpleName();
+    private final static String TAG = "ble";
 
     public static final String EXTRAS_DEVICE_NAME = "DEVICE_NAME";
     public static final String EXTRAS_DEVICE_ADDRESS = "DEVICE_ADDRESS";
@@ -155,6 +157,7 @@ public class DeviceControlActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.i(TAG, "create DeviceControlActivity");
         setContentView(R.layout.gatt_services_characteristics);
 
         final Intent intent = getIntent();
@@ -177,8 +180,11 @@ public class DeviceControlActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        Log.i(TAG, "resume DeviceControlActivity");
         registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
+        Log.i(TAG, "registered receiver");
         if (mBluetoothLeService != null) {
+            Log.i(TAG, "mBluetoothLeService not null");
             final boolean result = mBluetoothLeService.connect(mDeviceAddress);
             Log.d(TAG, "Connect request result=" + result);
         }
@@ -272,6 +278,10 @@ public class DeviceControlActivity extends Activity {
 
             // Loops through available Characteristics.
             for (BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) {
+                if (gattCharacteristic.getUuid().equals(UUID.fromString("340A1B80-CF4B-11E1-AC36-0002A5D5C51B"))) {
+                    Log.i(TAG, "Found the correct characteristic");
+//                    gattCharacteristic
+                }
                 charas.add(gattCharacteristic);
                 HashMap<String, String> currentCharaData = new HashMap<String, String>();
                 uuid = gattCharacteristic.getUuid().toString();
