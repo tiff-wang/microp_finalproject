@@ -67,6 +67,7 @@ public class MainActivity extends AppCompatActivity {
     private LinkedList<Byte> receivedBytes = new LinkedList<>();
 
     private TextView textView;
+    private TextView textView2;
 
     private enum CaptureType {
         None, // None means nothing is being recording at the moment.
@@ -81,7 +82,8 @@ public class MainActivity extends AppCompatActivity {
         Log.i(TAG, "Starting main activity");
 
         setContentView(R.layout.activity_main);
-        textView = (TextView) findViewById(R.id.log);
+        textView = findViewById(R.id.log);
+        textView2 = findViewById(R.id.log2);
 
         // Make sure BluetoothLE is supported on the device
         if(!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
@@ -181,14 +183,17 @@ public class MainActivity extends AppCompatActivity {
                 // Check for the specific codes that specify the start or stop of a send sequence
                 if (Arrays.equals(value, SEND_ACC_CODE)) {
                     Log.i(TAG, "Detected SEND_ACC_CODE");
+                    updateDataStatus();
                     receivedBytes.clear();
                     captureType = CaptureType.Acc;
                 } else if (Arrays.equals(value, SEND_VOICE_CODE)) {
                     Log.i(TAG, "Detected SEND_VOICE_CODE");
+                    updateDataStatus();
                     receivedBytes.clear();
                     captureType = CaptureType.Voice;
                 } else if (Arrays.equals(value, STOP_CODE)) {
                     Log.i(TAG, "Detected STOP_CODE");
+                    updateDataStatus();
                     Byte[] byteArray = new Byte[receivedBytes.size()];
                     receivedBytes.toArray(byteArray);
 
@@ -241,9 +246,33 @@ public class MainActivity extends AppCompatActivity {
         device.connectGatt(this, false, gattCallback);
     }
 
+    private void updateDataStatus() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                switch (captureType) {
+                    case None:
+                        textView2.setText("Waiting for new data transmission to start");
+                        break;
+                    case Acc:
+                        textView2.setText("Receiving accelerometer data");
+                        break;
+                    case Voice:
+                        textView2.setText("Receiving voice data");
+                }
+            }
+        });
+    }
+
     private void deviceConnected() {
         Log.i(TAG, "Device connected");
-        textView.setText("Device " + DEVICE_NAME + " successfully connected");
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                textView.setText("Device " + DEVICE_NAME + " successfully connected");
+            }
+        });
+        updateDataStatus();
         stopScan(); // Stop looking for more devices
     }
 
