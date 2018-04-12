@@ -54,10 +54,14 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothGattCallback gattCallback;
     private static int REQUEST_ENABLE_BT = 1;
 
-    private static String TAG = "ble";
-    private static byte[] SEND_VOICE_CODE = { 40, 0, 41, 0, 42, 0, 43, 0, 44, 0, 45, 0, 46, 0, 47, 0, 48, 0, 49, 0 };
-    private static byte[] SEND_ACC_CODE = { 10, 0, 9, 0, 8, 0, 7, 0, 6, 0, 5, 0, 4, 0, 3, 0, 2, 0, 1, 0 };
-    private static byte[] STOP_CODE = { 100, 0, 99, 0, 98, 0, 97, 0, 96, 0, 95, 0, 94, 0, 93, 0, 92, 0, 91, 0 };
+    private static final String TAG = "ble";
+    private static final String DEVICE_NAME = "IsaaNRG";
+    private static final String DEVICE_ADDRESS = "03:80:E1:00:34:12";
+    private static final UUID SERVICE_UUID = UUID.fromString("02366E80-CF3A-11E1-9AB4-0002A5D5C51B");
+    private static final UUID CHARACTERISTIC_UUID = UUID.fromString("340A1B80-CF4B-11E1-AC36-0002A5D5C51B");
+    private static final byte[] SEND_VOICE_CODE = { 40, 0, 41, 0, 42, 0, 43, 0, 44, 0, 45, 0, 46, 0, 47, 0, 48, 0, 49, 0 };
+    private static final byte[] SEND_ACC_CODE = { 10, 0, 9, 0, 8, 0, 7, 0, 6, 0, 5, 0, 4, 0, 3, 0, 2, 0, 1, 0 };
+    private static final byte[] STOP_CODE = { 100, 0, 99, 0, 98, 0, 97, 0, 96, 0, 95, 0, 94, 0, 93, 0, 92, 0, 91, 0 };
 
     private LinkedList<Byte> receivedBytes = new LinkedList<>();
 
@@ -118,8 +122,8 @@ public class MainActivity extends AppCompatActivity {
                 super.onScanResult(callbackType, result);
 //                Log.i(TAG, "Scan callback called");
 
-                if (result.getDevice().getAddress().equals("03:80:E1:00:34:12") && result.getDevice().getName().equals("IsaaNRG")) {
-                    Log.i(TAG, "Device \"IsaaNRG\" found");
+                if (result.getDevice().getAddress().equals(DEVICE_ADDRESS) && result.getDevice().getName().equals(DEVICE_NAME)) {
+                    Log.i(TAG, "Device " + DEVICE_NAME + " found");
                     connectDevice(result.getDevice().getAddress());
                 }
             }
@@ -150,8 +154,8 @@ public class MainActivity extends AppCompatActivity {
                 Log.i(TAG, "Gatt callback: onServicesDiscovered");
                 // As soon as services are discovered, acquire characteristic and try enabling
 
-                BluetoothGattService accService = gatt.getService(UUID.fromString("02366E80-CF3A-11E1-9AB4-0002A5D5C51B"));
-                BluetoothGattCharacteristic characteristic = accService.getCharacteristic(UUID.fromString("340A1B80-CF4B-11E1-AC36-0002A5D5C51B"));
+                BluetoothGattService accService = gatt.getService(SERVICE_UUID);
+                BluetoothGattCharacteristic characteristic = accService.getCharacteristic(CHARACTERISTIC_UUID);
                 if (characteristic != null) {
                     Log.i(TAG, "Characteristic found!");
 
@@ -234,7 +238,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void deviceConnected() {
         Log.i(TAG, "Device connected");
-        textView.setText("Device \"IsaaNRG\" successfully connected");
+        textView.setText("Device " + DEVICE_NAME + " successfully connected");
         stopScan(); // Stop looking for more devices
     }
 
