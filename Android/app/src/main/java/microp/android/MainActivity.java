@@ -59,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String DEVICE_ADDRESS = "03:80:E1:00:34:12";
     private static final UUID SERVICE_UUID = UUID.fromString("02366E80-CF3A-11E1-9AB4-0002A5D5C51B");
     private static final UUID CHARACTERISTIC_UUID = UUID.fromString("340A1B80-CF4B-11E1-AC36-0002A5D5C51B");
+    private static final UUID DESCRIPTOR_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
     private static final byte[] SEND_VOICE_CODE = { 40, 0, 41, 0, 42, 0, 43, 0, 44, 0, 45, 0, 46, 0, 47, 0, 48, 0, 49, 0 };
     private static final byte[] SEND_ACC_CODE = { 10, 0, 9, 0, 8, 0, 7, 0, 6, 0, 5, 0, 4, 0, 3, 0, 2, 0, 1, 0 };
     private static final byte[] STOP_CODE = { 100, 0, 99, 0, 98, 0, 97, 0, 96, 0, 95, 0, 94, 0, 93, 0, 92, 0, 91, 0 };
@@ -160,11 +161,15 @@ public class MainActivity extends AppCompatActivity {
                     Log.i(TAG, "Characteristic found!");
 
                     gatt.setCharacteristicNotification(characteristic, true);
-                    BluetoothGattDescriptor desc = characteristic.getDescriptor(characteristic.getDescriptors().get(0).getUuid());
-                    Log.i(TAG, "Descriptor UUID: " + desc.getUuid().toString()); // TODO read this and replace in method just above
-                    desc.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE); // The 'onCharacteristicChanged' callback will now be called every time the value is changed
+                    BluetoothGattDescriptor desc = characteristic.getDescriptor(DESCRIPTOR_UUID);
+                    if (desc != null) {
+                        Log.i(TAG, "Descriptor connected");
+                        desc.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE); // The 'onCharacteristicChanged' callback will now be called every time the value is changed
+                        boolean allGood = gatt.writeDescriptor(desc);
+                        Log.i("ble", "Descriptor write: " + allGood); // Should print true
 
-                    deviceConnected();
+                        deviceConnected();
+                    }
                 }
             }
 
