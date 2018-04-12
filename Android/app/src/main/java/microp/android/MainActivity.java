@@ -10,11 +10,6 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
-import android.bluetooth.le.BluetoothLeScanner;
-//import android.bluetooth.le.ScanCallback;
-//import android.bluetooth.le.ScanFilter;
-//import android.bluetooth.le.ScanResult;
-//import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.os.Build;
 import android.support.v4.app.ActivityCompat;
@@ -29,13 +24,11 @@ import android.widget.TextView;
 import android.widget.Button;
 import android.view.View;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedList;
 import java.util.Arrays;
 import java.util.UUID;
 
 import android.support.annotation.NonNull;
-import android.net.*;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.storage.*;
@@ -43,8 +36,6 @@ import java.io.*;
 
 import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat;
 import no.nordicsemi.android.support.v18.scanner.ScanCallback;
-import no.nordicsemi.android.support.v18.scanner.ScanFilter;
-import no.nordicsemi.android.support.v18.scanner.ScanSettings;
 import no.nordicsemi.android.support.v18.scanner.ScanResult;
 
 public class MainActivity extends AppCompatActivity {
@@ -59,32 +50,45 @@ public class MainActivity extends AppCompatActivity {
 
     private BluetoothAdapter bluetoothAdapter;
     private ScanCallback scanCallback;
-    private BluetoothLeScanner bleScanner;
     private BluetoothLeScannerCompat bleScannerCompat;
-    private BluetoothGatt gatt;
     private BluetoothGattCallback gattCallback;
     private static int REQUEST_ENABLE_BT = 1;
 
+    private static String TAG = "ble";
+    private static byte[] SEND_VOICE_CODE = { 40, 0, 41, 0, 42, 0, 43, 0, 44, 0, 45, 0, 46, 0, 47, 0, 48, 0, 49, 0 };
+    private static byte[] SEND_ACC_CODE = { 10, 0, 9, 0, 8, 0, 7, 0, 6, 0, 5, 0, 4, 0, 3, 0, 2, 0, 1, 0 };
+    private static byte[] STOP_CODE = { 100, 0, 99, 0, 98, 0, 97, 0, 96, 0, 95, 0, 94, 0, 93, 0, 92, 0, 91, 0 };
+
+    private LinkedList<Byte> receivedBytes = new LinkedList<>();
+
     private TextView textView;
-    // textView.setText("The new text that I'd like to display now that the user has pushed a button.");
+
+    private enum CaptureType {
+        None, // None means nothing is being recording at the moment.
+        Voice,
+        Acc
+    }
+    private CaptureType captureType = CaptureType.None;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.i("ble", "Starting main activity");
+        Log.i(TAG, "Starting main activity");
+
         setContentView(R.layout.activity_main);
         textView = (TextView) findViewById(R.id.log);
 
+        // Make sure BluetoothLE is supported on the device
         if(!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
             Toast.makeText(this, R.string.ble_not_supported, Toast.LENGTH_SHORT).show();
             finish();
         }
 
-        // Prompt for permissions
+        // Prompt for location permissions
         if (Build.VERSION.SDK_INT >= 23) {
             if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION)
                     != PackageManager.PERMISSION_GRANTED) {
-                Log.i("ble", "Location access not granted!");
+                Log.i(TAG, "Location access not granted!");
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 2);
             }
@@ -99,6 +103,7 @@ public class MainActivity extends AppCompatActivity {
             startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
         }
 
+        // onClickListener for the "Restart Scan" button
         final Button button = findViewById(R.id.button2);
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -111,32 +116,20 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onScanResult(int callbackType, ScanResult result) {
                 super.onScanResult(callbackType, result);
-//                Log.i("ble", "Scan callback called");
+//                Log.i(TAG, "Scan callback called");
 
                 if (result.getDevice().getAddress().equals("03:80:E1:00:34:12") && result.getDevice().getName().equals("IsaaNRG")) {
-                    Log.i("ble", "Device \"IsaaNRG\" found");
-                    textView.setText("Device \"IsaaNRG\" found");
+                    Log.i(TAG, "Device \"IsaaNRG\" found");
                     connectDevice(result.getDevice().getAddress());
                 }
-                // if you implement a RecyclerView inside your fragment or Activity for scanning, write an addDevice method in its corresponding Adapter class and call that method as following. Otherwise no need to include this statement.
-//                mRecyclerViewAdapter.addDevice(result.getDevice().getAddress(), result.getDevice().getName());
-            }
-
-            @Override
-            public void onBatchScanResults(List<ScanResult> results) {
-                Log.i("ble", "Batch scan callback called");
-                Log.i("ble", Integer.toString(results.size()));
             }
 
             @Override
             public void onScanFailed(int errorCode) {
                 super.onScanFailed(errorCode);
-                Log.i("ble", "Scan Failed");
-                Log.i("ble", Integer.toString(errorCode));
+                Log.i(TAG, "Scan Failed with code " + errorCode);
             }
         };
-
-        final Activity activity = this;
 
         gattCallback = new BluetoothGattCallback() {
             @Override
@@ -147,7 +140,6 @@ public class MainActivity extends AppCompatActivity {
                         // As soon as we are connected, discover services
                         gatt.discoverServices();
                         // When services are discovered, the 'onServicesDiscovered' callback defined below will be called
-                        Log.i("ble", "onConnectionsStateChange");
                         break;
                 }
             }
@@ -155,42 +147,51 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onServicesDiscovered(BluetoothGatt gatt, int status) {
                 super.onServicesDiscovered(gatt, status);
-                Log.i("ble", "Gatt callback: onServicesDiscovered");
+                Log.i(TAG, "Gatt callback: onServicesDiscovered");
                 // As soon as services are discovered, acquire characteristic and try enabling
 
-                // TODO Do we need to change these UUIDs for our needs?? What do they do?
-                BluetoothGattService movService = gatt.getService(UUID.fromString("02366E80-CF3A-11E1-9AB4-0002A5D5C51B"));
-                BluetoothGattCharacteristic characteristic = movService.getCharacteristic(UUID.fromString("340A1B80-CF4B-11E1-AC36-0002A5D5C51B"));
+                BluetoothGattService accService = gatt.getService(UUID.fromString("02366E80-CF3A-11E1-9AB4-0002A5D5C51B"));
+                BluetoothGattCharacteristic characteristic = accService.getCharacteristic(UUID.fromString("340A1B80-CF4B-11E1-AC36-0002A5D5C51B"));
                 if (characteristic != null) {
-                    Log.i("ble", "Characteristic found!");
+                    Log.i(TAG, "Characteristic found!");
 
                     gatt.setCharacteristicNotification(characteristic, true);
-//                    characteristic.getDescriptors();
                     BluetoothGattDescriptor desc = characteristic.getDescriptor(characteristic.getDescriptors().get(0).getUuid());
-                    Log.i("ble", "Descriptor is " + desc); // this is not null
-                    desc.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-                    Log.i("ble", "Descriptor write: " + gatt.writeDescriptor(desc)); // returns true
+                    Log.i(TAG, "Descriptor UUID: " + desc.getUuid().toString()); // TODO read this and replace in method just above
+                    desc.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE); // The 'onCharacteristicChanged' callback will now be called every time the value is changed
 
                     deviceConnected();
-                    gatt.readCharacteristic(characteristic);
                 }
             }
 
             @Override
-            public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-                super.onCharacteristicRead(gatt, characteristic, status);
-
-//                Log.i("ble", "onCharacteristicRead");
-
-//                Log.i("ble", Arrays.toString(characteristic.getValue()));
-                // TODO we received data, handle it
-
-//                gatt.readCharacteristic(characteristic); TODO just removed this, does it still work?
-            }
-
-            @Override
             public void onCharacteristicChanged(BluetoothGatt bluetoothGatt, BluetoothGattCharacteristic characteristic) {
-                Log.i("ble", Arrays.toString(characteristic.getValue()));
+                byte[] value = characteristic.getValue();
+                Log.i(TAG, Arrays.toString(value)); // TODO remove
+
+                // Check for the specific codes that specify the start or stop of a send sequence
+                if (Arrays.equals(value, SEND_ACC_CODE)) {
+                    Log.i(TAG, "Detected SEND_ACC_CODE");
+                    receivedBytes.clear();
+                    captureType = CaptureType.Acc;
+                } else if (Arrays.equals(value, SEND_VOICE_CODE)) {
+                    Log.i(TAG, "Detected SEND_VOICE_CODE");
+                    receivedBytes.clear();
+                    captureType = CaptureType.Voice;
+                } else if (Arrays.equals(value, STOP_CODE)) {
+                    Log.i(TAG, "Detected STOP_CODE");
+                    Byte[] byteArray = new Byte[receivedBytes.size()];
+                    receivedBytes.toArray(byteArray);
+
+                    // TODO Tiff: do something with 'byteArray' (Byte[])
+                    // To know if the bytes are for voice or acc, use:
+                    // captureType == CaptureType.Voice (or CaptureType.Acc)
+
+                    captureType = CaptureType.None; // We are done recording
+
+                } else if (captureType != CaptureType.None) { // We are recording
+                    for (byte b: value) receivedBytes.add(b); // Append all received bytes to the linked list
+                }
             }
         };
     }
@@ -208,35 +209,33 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startScan() {
-        Log.i("ble", "Starting scan");
-        textView.setText("Scanning for device");
+        Log.i(TAG, "Starting scan");
+        textView.setText("Scanning for device...");
 
         if (bleScannerCompat == null) {
-//            bleScanner = bluetoothAdapter.getBluetoothLeScanner();
             bleScannerCompat = BluetoothLeScannerCompat.getScanner();
         }
 
-        // Start the scan in low latency mode
-
-//        bleScanner.startScan(new ArrayList<ScanFilter>(), new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build(), scanCallback);
         bleScannerCompat.startScan(scanCallback);
     }
 
     private void stopScan() {
-        Log.i("ble", "Stop scanning");
+        Log.i(TAG, "Stop scanning");
         if (bleScannerCompat != null)
             bleScannerCompat.stopScan(scanCallback);
     }
 
     private void connectDevice(String address) {
-        Log.i("ble", "Connecting Device");
-        textView.setText("Device Connected");
+        Log.i(TAG, "Connecting Device");
+        textView.setText("Connecting device...");
         BluetoothDevice device = bluetoothAdapter.getRemoteDevice(address);
-        gatt = device.connectGatt(this, false, gattCallback);
+        device.connectGatt(this, false, gattCallback);
     }
 
     private void deviceConnected() {
-        Log.i("ble", "Device connected");
+        Log.i(TAG, "Device connected");
+        textView.setText("Device \"IsaaNRG\" successfully connected");
+        stopScan(); // Stop looking for more devices
     }
 
     @Override
