@@ -1,3 +1,12 @@
+
+# Graphing the Accelerometer readings using Firebase, Plotly and Angular2 
+
+To set up the environment, you need to install all the node modules first. 
+
+```
+npm install 
+```
+
 # Graph
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 1.1.1.
