@@ -217,6 +217,18 @@ public class MainActivity extends AppCompatActivity {
         stopScan();
     }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
+        stopScan();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopScan();
+    }
+
     private void startScan() {
         Log.i(TAG, "Starting scan");
         textView.setText("Scanning for device...");
