@@ -1,3 +1,11 @@
+/* 
+
+useful links: 
+- test file url on firebase: 
+https://firebasestorage.googleapis.com/v0/b/microp-g2.appspot.com/o/test-3.mp3?alt=media&token=3e551f22-a2a1-42af-870f-b745ae8cd570
+
+*/
+
 package microp.android;
 
 import android.Manifest;
@@ -47,10 +55,10 @@ public class MainActivity extends AppCompatActivity {
     FirebaseStorage storage = FirebaseStorage.getInstance();
     // Create a storage reference from our app
     StorageReference storageRef = storage.getReference();
-    StorageReference ourFileRef = storageRef.child("boardData/testfile.mp3");
+    StorageReference ourFileRef = storageRef.child("boardData/testfile.wav");
     // Create file metadata including the content type
     StorageMetadata metadata = new StorageMetadata.Builder()
-            .setContentType("audio/mpeg")
+            .setContentType("audio/x-wav")
             .build();
 
     private BluetoothAdapter bluetoothAdapter;
