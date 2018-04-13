@@ -1,4 +1,4 @@
 .idea
 firebase-functions/functions/node_modules/
-
+firebase_functions/functions/private.js
 graph/.git
