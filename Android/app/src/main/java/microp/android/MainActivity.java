@@ -12,6 +12,7 @@ import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.os.Build;
+import android.os.Handler;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -24,8 +25,10 @@ import android.widget.TextView;
 import android.widget.Button;
 import android.view.View;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import android.support.annotation.NonNull;
@@ -36,7 +39,9 @@ import java.io.*;
 
 import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat;
 import no.nordicsemi.android.support.v18.scanner.ScanCallback;
+import no.nordicsemi.android.support.v18.scanner.ScanFilter;
 import no.nordicsemi.android.support.v18.scanner.ScanResult;
+import no.nordicsemi.android.support.v18.scanner.ScanSettings;
 
 public class MainActivity extends AppCompatActivity {
     FirebaseStorage storage = FirebaseStorage.getInstance();
@@ -52,6 +57,8 @@ public class MainActivity extends AppCompatActivity {
     private ScanCallback scanCallback;
     private BluetoothLeScannerCompat bleScannerCompat;
     private BluetoothGattCallback gattCallback;
+    private boolean scanning = false;
+    private Handler handler;
     private static int REQUEST_ENABLE_BT = 1;
 
     private static final String TAG = "ble";
@@ -63,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
     private static final byte[] SEND_VOICE_CODE = { 40, 0, 41, 0, 42, 0, 43, 0, 44, 0, 45, 0, 46, 0, 47, 0, 48, 0, 49, 0 };
     private static final byte[] SEND_ACC_CODE = { 10, 0, 9, 0, 8, 0, 7, 0, 6, 0, 5, 0, 4, 0, 3, 0, 2, 0, 1, 0 };
     private static final byte[] STOP_CODE = { 100, 0, 99, 0, 98, 0, 97, 0, 96, 0, 95, 0, 94, 0, 93, 0, 92, 0, 91, 0 };
+    private static final int SCAN_TIME = 10000;
 
     private LinkedList<Byte> receivedBytes = new LinkedList<>();
 
@@ -84,6 +92,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         textView = findViewById(R.id.log);
         textView2 = findViewById(R.id.log2);
+
+        handler = new Handler();
 
         // Make sure BluetoothLE is supported on the device
         if(!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
@@ -127,6 +137,7 @@ public class MainActivity extends AppCompatActivity {
 
                 if (result.getDevice().getAddress().equals(DEVICE_ADDRESS) && result.getDevice().getName().equals(DEVICE_NAME)) {
                     Log.i(TAG, "Device " + DEVICE_NAME + " found");
+                    stopScan();
                     connectDevice(result.getDevice().getAddress());
                 }
             }
@@ -230,20 +241,43 @@ public class MainActivity extends AppCompatActivity {
             bleScannerCompat = BluetoothLeScannerCompat.getScanner();
         }
 
-        bleScannerCompat.startScan(scanCallback);
+        // Scan for 10s only
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (scanning) {
+                    bleScannerCompat.stopScan(scanCallback);
+                    scanning = false;
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            textView.setText("Scan stopped (Timeout)");
+                        }
+                    });
+                }
+            }
+        }, SCAN_TIME);
+
+        ScanSettings settings = new ScanSettings.Builder()
+                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                .setUseHardwareBatchingIfSupported(false).build();
+        List<ScanFilter> filters = new ArrayList<>();
+        bleScannerCompat.startScan(filters, settings, scanCallback);
+        scanning = true;
     }
 
     private void stopScan() {
         Log.i(TAG, "Stop scanning");
         if (bleScannerCompat != null)
             bleScannerCompat.stopScan(scanCallback);
+        scanning = false;
     }
 
     private void connectDevice(String address) {
         Log.i(TAG, "Connecting Device");
         textView.setText("Connecting device...");
         BluetoothDevice device = bluetoothAdapter.getRemoteDevice(address);
-        device.connectGatt(this, false, gattCallback);
+        device.connectGatt(this, true, gattCallback);
     }
 
     private void updateDataStatus() {
