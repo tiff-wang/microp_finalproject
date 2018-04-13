@@ -27,6 +27,5 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
     compile 'com.google.firebase:firebase-core:11.8.0'
     compile 'com.google.firebase:firebase-storage:11.8.0'
-    compile 'no.nordicsemi.android.support.v18:scanner:1.0.0'
 }
 apply plugin: 'com.google.gms.google-services'

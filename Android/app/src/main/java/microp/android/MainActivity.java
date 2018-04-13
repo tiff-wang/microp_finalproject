@@ -25,10 +25,8 @@ import android.widget.TextView;
 import android.widget.Button;
 import android.view.View;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
 
 import android.support.annotation.NonNull;
@@ -36,12 +34,6 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.storage.*;
 import java.io.*;
-
-import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat;
-import no.nordicsemi.android.support.v18.scanner.ScanCallback;
-import no.nordicsemi.android.support.v18.scanner.ScanFilter;
-import no.nordicsemi.android.support.v18.scanner.ScanResult;
-import no.nordicsemi.android.support.v18.scanner.ScanSettings;
 
 public class MainActivity extends AppCompatActivity {
     FirebaseStorage storage = FirebaseStorage.getInstance();
@@ -54,8 +46,7 @@ public class MainActivity extends AppCompatActivity {
             .build();
 
     private BluetoothAdapter bluetoothAdapter;
-    private ScanCallback scanCallback;
-    private BluetoothLeScannerCompat bleScannerCompat;
+    private BluetoothAdapter.LeScanCallback scanCallback;
     private BluetoothGattCallback gattCallback;
     private boolean scanning = false;
     private Handler handler;
@@ -129,23 +120,16 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        scanCallback = new ScanCallback() {
+        scanCallback = new BluetoothAdapter.LeScanCallback() {
             @Override
-            public void onScanResult(int callbackType, ScanResult result) {
-                super.onScanResult(callbackType, result);
+            public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
 //                Log.i(TAG, "Scan callback called");
 
-                if (result.getDevice().getAddress().equals(DEVICE_ADDRESS) && result.getDevice().getName().equals(DEVICE_NAME)) {
+                if (device.getAddress().equals(DEVICE_ADDRESS) && device.getName().equals(DEVICE_NAME)) {
                     Log.i(TAG, "Device " + DEVICE_NAME + " found");
                     stopScan();
-                    connectDevice(result.getDevice().getAddress());
+                    connectDevice(device.getAddress());
                 }
-            }
-
-            @Override
-            public void onScanFailed(int errorCode) {
-                super.onScanFailed(errorCode);
-                Log.i(TAG, "Scan Failed with code " + errorCode);
             }
         };
 
@@ -237,16 +221,12 @@ public class MainActivity extends AppCompatActivity {
         Log.i(TAG, "Starting scan");
         textView.setText("Scanning for device...");
 
-        if (bleScannerCompat == null) {
-            bleScannerCompat = BluetoothLeScannerCompat.getScanner();
-        }
-
         // Scan for 10s only
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 if (scanning) {
-                    bleScannerCompat.stopScan(scanCallback);
+                    bluetoothAdapter.stopLeScan(scanCallback);
                     scanning = false;
                     runOnUiThread(new Runnable() {
                         @Override
@@ -258,18 +238,14 @@ public class MainActivity extends AppCompatActivity {
             }
         }, SCAN_TIME);
 
-        ScanSettings settings = new ScanSettings.Builder()
-                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-                .setUseHardwareBatchingIfSupported(false).build();
-        List<ScanFilter> filters = new ArrayList<>();
-        bleScannerCompat.startScan(filters, settings, scanCallback);
+        bluetoothAdapter.startLeScan(scanCallback);
         scanning = true;
     }
 
     private void stopScan() {
         Log.i(TAG, "Stop scanning");
-        if (bleScannerCompat != null)
-            bleScannerCompat.stopScan(scanCallback);
+        if (bluetoothAdapter != null)
+            bluetoothAdapter.stopLeScan(scanCallback);
         scanning = false;
     }
 
