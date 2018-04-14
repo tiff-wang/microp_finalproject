@@ -44,10 +44,10 @@ public class MainActivity extends AppCompatActivity {
     FirebaseStorage storage = FirebaseStorage.getInstance();
     // Create a storage reference from our app
     StorageReference storageRef = storage.getReference();
-    StorageReference ourFileRef = storageRef.child("boardData/testfile.mp3");
+    StorageReference ourFileRef = storageRef.child("boardData/testfile.wav");
     // Create file metadata including the content type
     StorageMetadata metadata = new StorageMetadata.Builder()
-            .setContentType("audio/mpeg")
+            .setContentType("audio/x-wav")
             .build();
 
     private BluetoothAdapter bluetoothAdapter;
