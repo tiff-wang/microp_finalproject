@@ -12,7 +12,6 @@ const gcs = require('@google-cloud/storage')();
 const spawn = require('child-process-promise').spawn;
 const path = require('path');
 const os = require('os');
-const fs = require('fs');
 
  // Create and Deploy Your First Cloud Functions
  // https://firebase.google.com/docs/functions/write-firebase-functions
@@ -66,13 +65,21 @@ exports.uploadRec = functions.storage.object().onChange((event) => {
   }
 
   // Exit if this is triggered on a file that is not an audio.
-  else if (!contentType.startsWith('audio/')) {
-    console.log('Plotting pitch and roll');
+  else if (contentType.startsWith('text/plain')) {
     accGraph(object.name, object.bucket, object.metadata)
-    return console.log('complete')
+    return console.log('Plotting pitch and roll')
+  } 
+
+  else if (contentType.startsWith('image/')){
+    return console.log('graph uploaded')
   }
 
-  return console.log('complete');
+  else if (contentType.startsWith('audio/')){
+    // add voice recognition 
+    return console.log('audio file')
+  }
+
+  return console.log('ended with not a file of interest');
 });
 
 
