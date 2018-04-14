@@ -45,8 +45,8 @@
 
 LIS3DSH_InitTypeDef Acc_instance;
 ADC_HandleTypeDef hadc1;
-
 TIM_HandleTypeDef htim2;
+UART_HandleTypeDef huart5;
 
 /* User Private variables ---------------------------------------------------------*/
 	//ACC.
@@ -75,15 +75,17 @@ TIM_HandleTypeDef htim2;
 	//MIC
 	int firstPass = 1; //boolean for allowing 1 sec delay before reading mic. data
 	int prevCNT = 0; 	 //Counter for allowing 1 sec delay before reading mic. data + use for timing the number return (N) for LED -BLINKY()
-	int audioBufferSize =12000;
-	int audioBuffer[12000] = {0};
+	const int audioBufferSize =12000;
+	uint8_t audioBuffer[audioBufferSize] = {0};
 	int audioIndex = 0 ;
-	//int adcReadings =0;							//Use for testing purposes (print)
+	uint8_t transBuffer[1] = {0};		//Indicate to the nucleo board if reading mic or pitch and roll	
+	//int adcReadings =0;						//Use for testing purposes (print)
 	int audioBool =0; 							//Boolean for audio reading (used in state 3)
 	int audioDone = 0;
 	//Discovery board - pitch and roll
-	float pitch[1000] = {0};
-	float roll[1000] ={0};
+	const int pnrSize = 1000;
+	float pitch[pnrSize] = {0};
+	float roll[pnrSize] ={0};
 	//Blinky
 	int nbBlink = 0;
 	
@@ -101,12 +103,11 @@ static void MX_ADC1_Init(void);
 float getPitch(float x, float y, float z);
 float getRoll(float x, float y, float z);
 float FIR_C(int Input);
-	
 static void MX_TIM2_Init(void);
-	
 void readACC(void);
 int readTap(void);
 int accStable(void);
+void MX_UART5_Init(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
@@ -140,6 +141,7 @@ int main(void)
 	MX_TIM2_Init();
 	HAL_TIM_Base_Init(&htim2);
 	
+	MX_UART5_Init();
 	//HAL_MspInit();
 	//HAL_ADC_MspInit(&hadc1);
 	
@@ -251,17 +253,50 @@ int main(void)
 				//Transfer data to Nucleo Board (dataToSend)
 				//Data to sent: Audio(1s) OR pitch and roll(10s)
 				if(audioBool){
+					transBuffer[0] = 0;
 					HAL_GPIO_WritePin(GPIOD, LD6_Pin, GPIO_PIN_SET); //BLUE LED
-					// and example of sending a data through UART, but you need to configure the UART block:
-					// HAL_UART_Transmit(&huart2,"FinalProject\n",14,2000);
+					HAL_UART_Transmit_IT(&huart5, transBuffer, 1); // send signal to indicate voice data (0)
+					
+					while (HAL_UART_GetState(&huart5) != HAL_UART_STATE_READY){};
+					HAL_UART_Transmit(&huart5, audioBuffer, audioBufferSize, 5000);
+					while (HAL_UART_GetState(&huart5) != HAL_UART_STATE_READY){};
+						
+					//Done sending data
+					audioBool = 0; 
+					HAL_GPIO_WritePin(GPIOD, LD6_Pin, GPIO_PIN_RESET); //BLUE LED
+					state = 4;	
+						
 				}
 				else{
 					HAL_GPIO_WritePin(GPIOD, LD6_Pin, GPIO_PIN_SET); //BLUE LED
-					// and example of sending a data through UART, but you need to configure the UART block:
-					// HAL_UART_Transmit(&huart2,"FinalProject\n",14,2000); 
+					
+					//Send Pitch and Roll (1)
+					transBuffer[0] = 1;
+					HAL_UART_Transmit_IT(&huart5, transBuffer, 1); // send signal to indicate pitch and roll (1)
+					
+					//SENDING PITCH
+					while (HAL_UART_GetState(&huart5) != HAL_UART_STATE_READY){};
+					for(int i = 0; i < pnrSize; i++){
+						transBuffer[0] = pitch[i];
+						HAL_UART_Transmit_IT(&huart5, transBuffer, 1);
+						while (HAL_UART_GetState(&huart5) != HAL_UART_STATE_READY){};
+					}
+					
+					//SENDING ROLL
+					transBuffer[0] = 2;
+					for(int i = 0; i < pnrSize; i++){
+						transBuffer[0] = roll[i];
+						HAL_UART_Transmit_IT(&huart5, transBuffer, 1);
+						while (HAL_UART_GetState(&huart5) != HAL_UART_STATE_READY){};
+					}
+					
+					//Done sending data
+					audioBool = 0; 
+					HAL_GPIO_WritePin(GPIOD, LD6_Pin, GPIO_PIN_RESET); //BLUE LED
+					state = 0;
 				}
-				
-				//WHEN RECEIVE FINISH TRANSMITTING MESSAGE
+				/*
+				//WHEN FINISH TRANSMITTING MESSAGE - TESTING PURPOSE
 				if (firstPass){
 					firstPass = 0;
 					prevCNT = HAL_GetTick();
@@ -281,6 +316,7 @@ int main(void)
 						state = 0;
 					}
 				}
+				*/
 				break;
 			}
 			case 4:
@@ -299,6 +335,8 @@ int main(void)
 				//accData = Read accelerometer for 10 seconds
 				HAL_GPIO_WritePin(GPIOD, LD5_Pin, GPIO_PIN_SET);	//RED LED
 				readACC();
+				
+				//TO VALIDATE WHEN CHANGING THE DISC. FREQUENCY******************************************************************************************
 				
 				if(nbValues >= 1016){
 					//send data --> go to state 3
@@ -442,6 +480,26 @@ static void MX_ADC1_Init(void)
 
 }
 
+/* UART5 init function */
+
+void MX_UART5_Init(void)
+
+{
+
+  huart5.Instance = UART5;
+  huart5.Init.BaudRate = 115200;
+  huart5.Init.WordLength = UART_WORDLENGTH_8B;
+  huart5.Init.StopBits = UART_STOPBITS_1;
+  huart5.Init.Parity = UART_PARITY_NONE;
+  huart5.Init.Mode = UART_MODE_TX_RX;
+  huart5.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart5.Init.OverSampling = UART_OVERSAMPLING_16;
+	
+  if (HAL_UART_Init(&huart5) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+}
 
 
 /** Configure pins as 

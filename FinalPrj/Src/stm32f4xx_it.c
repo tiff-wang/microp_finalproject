@@ -34,6 +34,7 @@
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx.h"
 #include "stm32f4xx_it.h"
+#include "main.h"
 
 /* USER CODE BEGIN 0 */
 extern uint8_t MyFlag;
@@ -43,6 +44,8 @@ extern int bufferIndex;
 extern ADC_HandleTypeDef hadc1;
 extern int adcSampling;
 extern int audioIndex;
+
+extern UART_HandleTypeDef huart5;
 
 /* USER CODE END 0 */
 
@@ -87,6 +90,18 @@ void ADC_IRQHandler(void)
 	 /* USER CODE BEGIN ADC_IRQn 1 */
 
   /* USER CODE END ADC_IRQn 1 */
+}
+
+void UART5_IRQHandler(void)
+{
+  /* USER CODE BEGIN UART5_IRQn 0 */
+
+  /* USER CODE END UART5_IRQn 0 */
+
+  HAL_UART_IRQHandler(&huart5);
+
+  /* USER CODE BEGIN UART5_IRQn 1 */
+  /* USER CODE END UART5_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */
