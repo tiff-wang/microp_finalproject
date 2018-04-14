@@ -499,6 +499,8 @@ void MX_UART5_Init(void)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
+	
+	HAL_UART_MspInit(&huart5);
 }
 
 

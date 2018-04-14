@@ -174,7 +174,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     PC12     ------> UART5_TX
     PD2     ------> UART5_RX 
     */
-
+	
     GPIO_InitStruct.Pin = GPIO_PIN_12;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_PULLUP;

@@ -1,4 +1,4 @@
---cpu=Cortex-M4.fp
+--cpu Cortex-M4.fp
 "finalprj\startup_stm32f407xx.o"
 "finalprj\system_stm32f4xx.o"
 "finalprj\stm32f4xx_hal_rcc.o"
@@ -26,6 +26,6 @@
 "finalprj\lis3dsh.o"
 "finalprj\readacc.o"
 --library_type=microlib --strict --scatter "FinalPrj\FinalPrj.sct"
---diag_suppress=L6329 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
+--diag_suppress=L6329 --summary_stderr --info summarysizes --map --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers
 --list "FinalPrj.map" -o FinalPrj\FinalPrj.axf
