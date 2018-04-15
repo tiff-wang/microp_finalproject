@@ -186,7 +186,7 @@ void PPP_IRQHandler(void)
 void USART6_IRQHandler(void)
 {
   /* USER CODE BEGIN USART6_IRQn 0 */
-	printf("%s", msg);
+	printf("%d%d%d%d%d%d%d%d%d%d\n", msg[0], msg[1], msg[2], msg[3], msg[4], msg[5], msg[6], msg[7], msg[8], msg[9]);
   /* USER CODE END USART6_IRQn 0 */
   HAL_UART_IRQHandler(&huart6);
   /* USER CODE BEGIN USART6_IRQn 1 */

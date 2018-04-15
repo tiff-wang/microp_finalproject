@@ -88,7 +88,7 @@ short test_array[40] = {1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,
 	//store the voice or accelerometer data for transmission
 int iter = -1;
 int delay_time = 600000;
-char msg[] = "111";
+short msg[] = {9, 9, 9, 9, 9, 9, 9, 9, 9, 9};
 	
 	/**
  * @}
@@ -173,7 +173,7 @@ int main(void)
 
 	
 
-	HAL_UART_Receive_IT(&huart6, (uint8_t*)msg, 3);
+	HAL_UART_Receive_IT(&huart6, (uint8_t*)msg, 11);
 
   /* Initialize the BlueNRG SPI driver */
   BNRG_SPI_Init();
@@ -512,6 +512,7 @@ void HAL_MspInit(void)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart){
 	printf("callback");
+	HAL_UART_Receive_IT(&huart6, (uint8_t*)msg, 11);
 }
 
 

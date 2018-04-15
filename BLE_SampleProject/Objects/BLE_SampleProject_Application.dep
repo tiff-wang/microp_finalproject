@@ -111,7 +111,7 @@ I (.\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_uart.h)(0x5AD27E7D)
 I (.\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_usart.h)(0x5AD27E7D)
 I (.\Drivers\BSP\STM32F4xx-Nucleo\stm32f4xx_nucleo.h)(0x5AD27E7D)
 I (.\Drivers\BSP\STM32F4xx-Nucleo\stm32f4xx_nucleo_bluenrg.h)(0x5AD27E7D)
-F (.\Src\stm32xx_it.c)(0x5AD2A32A)(--c99 -c --cpu Cortex-M4.fp -g -O0 --apcs=interwork --split_sections -I.\Inc -I.\Drivers\CMSIS\Device\ST\STM32F4xx\Include -I.\Drivers\STM32F4xx_HAL_Driver\Inc -I.\Drivers\BSP\STM32F4xx-Nucleo -I.\Drivers\BSP\X-NUCLEO-IDB04A1 -I.\BLE\STM32_BlueNRG\SimpleBlueNRG_HCI\includes -I.\Drivers\CMSIS\Include -I.\RTE --C99 --gnu -D__UVISION_VERSION="515" -D_RTE_ -DSTM32F401xE -DUSE_HAL_DRIVER -DSTM32F401xE -DUSE_STM32F4XX_NUCLEO -DDEBUG-o .\objects\stm32xx_it.o --omf_browse .\objects\stm32xx_it.crf --depend .\objects\stm32xx_it.d)
+F (.\Src\stm32xx_it.c)(0x5AD2A8D6)(--c99 -c --cpu Cortex-M4.fp -g -O0 --apcs=interwork --split_sections -I.\Inc -I.\Drivers\CMSIS\Device\ST\STM32F4xx\Include -I.\Drivers\STM32F4xx_HAL_Driver\Inc -I.\Drivers\BSP\STM32F4xx-Nucleo -I.\Drivers\BSP\X-NUCLEO-IDB04A1 -I.\BLE\STM32_BlueNRG\SimpleBlueNRG_HCI\includes -I.\Drivers\CMSIS\Include -I.\RTE --C99 --gnu -D__UVISION_VERSION="515" -D_RTE_ -DSTM32F401xE -DUSE_HAL_DRIVER -DSTM32F401xE -DUSE_STM32F4XX_NUCLEO -DDEBUG-o .\objects\stm32xx_it.o --omf_browse .\objects\stm32xx_it.crf --depend .\objects\stm32xx_it.d)
 I (.\Inc\stm32xx_it.h)(0x5AD29DB9)
 I (.\Inc\cube_hal.h)(0x5AD27E7D)
 I (.\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal.h)(0x5AD27E7D)
@@ -148,7 +148,7 @@ I (.\Drivers\BSP\STM32F4xx-Nucleo\stm32f4xx_nucleo.h)(0x5AD27E7D)
 I (.\Drivers\BSP\STM32F4xx-Nucleo\stm32f4xx_nucleo_bluenrg.h)(0x5AD27E7D)
 I (.\BLE\STM32_BlueNRG\SimpleBlueNRG_HCI\includes\debug.h)(0x5AD27E7D)
 I (C:\Keil_v5\ARM\ARMCC\include\string.h)(0x54C326B8)
-F (.\Src\main.c)(0x5AD2A2DE)(--c99 -c --cpu Cortex-M4.fp -g -O0 --apcs=interwork --split_sections -I.\Inc -I.\Drivers\CMSIS\Device\ST\STM32F4xx\Include -I.\Drivers\STM32F4xx_HAL_Driver\Inc -I.\Drivers\BSP\STM32F4xx-Nucleo -I.\Drivers\BSP\X-NUCLEO-IDB04A1 -I.\BLE\STM32_BlueNRG\SimpleBlueNRG_HCI\includes -I.\Drivers\CMSIS\Include -I.\RTE --C99 --gnu -D__UVISION_VERSION="515" -D_RTE_ -DSTM32F401xE -DUSE_HAL_DRIVER -DSTM32F401xE -DUSE_STM32F4XX_NUCLEO -DDEBUG-o .\objects\main.o --omf_browse .\objects\main.crf --depend .\objects\main.d)
+F (.\Src\main.c)(0x5AD2A832)(--c99 -c --cpu Cortex-M4.fp -g -O0 --apcs=interwork --split_sections -I.\Inc -I.\Drivers\CMSIS\Device\ST\STM32F4xx\Include -I.\Drivers\STM32F4xx_HAL_Driver\Inc -I.\Drivers\BSP\STM32F4xx-Nucleo -I.\Drivers\BSP\X-NUCLEO-IDB04A1 -I.\BLE\STM32_BlueNRG\SimpleBlueNRG_HCI\includes -I.\Drivers\CMSIS\Include -I.\RTE --C99 --gnu -D__UVISION_VERSION="515" -D_RTE_ -DSTM32F401xE -DUSE_HAL_DRIVER -DSTM32F401xE -DUSE_STM32F4XX_NUCLEO -DDEBUG-o .\objects\main.o --omf_browse .\objects\main.crf --depend .\objects\main.d)
 I (.\Inc\cube_hal.h)(0x5AD27E7D)
 I (.\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal.h)(0x5AD27E7D)
 I (.\Inc\stm32f4xx_hal_conf.h)(0x5AD27E7D)
