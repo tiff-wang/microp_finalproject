@@ -142,6 +142,7 @@ int main(void)
 	HAL_TIM_Base_Init(&htim2);
 	
 	MX_UART5_Init();
+	
 	//HAL_MspInit();
 	//HAL_ADC_MspInit(&hadc1);
 	
@@ -154,6 +155,10 @@ int main(void)
 
   while (1)
   {
+		char msg[] = "hi\n";
+		HAL_UART_Transmit_IT(&huart5, (uint8_t*)msg, sizeof(msg)/sizeof(msg[0]));
+		
+	
 		switch(state) {
 			case 0:
 			{

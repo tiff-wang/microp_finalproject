@@ -3,9 +3,9 @@
 <title>Static Call Graph - [FinalPrj\FinalPrj.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image FinalPrj\FinalPrj.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5050169: Last Updated: Sat Apr 14 16:18:36 2018
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060750: Last Updated: Sat Apr 14 19:51:58 2018
 <BR><P>
-<H3>Maximum Stack Usage =        280 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
+<H3>Maximum Stack Usage =        288 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
 main &rArr; readACC &rArr; getRoll &rArr; __hardfp_atan2 &rArr; atan &rArr; __hardfp_atan &rArr; __kernel_poly &rArr; __aeabi_dadd &rArr; _double_epilogue &rArr; _double_round
 <P>
@@ -473,7 +473,7 @@ Global Symbols
 </UL>
 <BR>[Called By]<UL><LI><a href="#[bc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__hardfp_atan
 <LI><a href="#[c2]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__hardfp_atan2
-<LI><a href="#[d4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;readTap
+<LI><a href="#[d5]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;readTap
 <LI><a href="#[cc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;accStable
 </UL>
 
@@ -523,8 +523,8 @@ Global Symbols
 <P><STRONG><a name="[cd]"></a>__aeabi_f2d</STRONG> (Thumb, 38 bytes, Stack size 0 bytes, f2d.o(.text))
 <BR><BR>[Called By]<UL><LI><a href="#[d1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;getRoll
 <LI><a href="#[d0]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;getPitch
-<LI><a href="#[d3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;readACC
-<LI><a href="#[d4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;readTap
+<LI><a href="#[d4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;readACC
+<LI><a href="#[d5]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;readTap
 <LI><a href="#[cc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;accStable
 </UL>
 
@@ -536,7 +536,7 @@ Global Symbols
 
 <P><STRONG><a name="[c8]"></a>__aeabi_cdrcmple</STRONG> (Thumb, 48 bytes, Stack size 0 bytes, cdrcmple.o(.text))
 <BR><BR>[Called By]<UL><LI><a href="#[c7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_fp_digits
-<LI><a href="#[d4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;readTap
+<LI><a href="#[d5]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;readTap
 </UL>
 
 <P><STRONG><a name="[6d]"></a>__aeabi_d2f</STRONG> (Thumb, 56 bytes, Stack size 8 bytes, d2f.o(.text))
@@ -707,7 +707,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[7c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_ADC_Init
 </UL>
 
-<P><STRONG><a name="[d6]"></a>HAL_ADC_Start_IT</STRONG> (Thumb, 180 bytes, Stack size 12 bytes, stm32f4xx_hal_adc.o(i.HAL_ADC_Start_IT))
+<P><STRONG><a name="[d7]"></a>HAL_ADC_Start_IT</STRONG> (Thumb, 180 bytes, Stack size 12 bytes, stm32f4xx_hal_adc.o(i.HAL_ADC_Start_IT))
 <BR><BR>[Stack]<UL><LI>Max Depth = 12<LI>Call Chain = HAL_ADC_Start_IT
 </UL>
 <BR>[Called By]<UL><LI><a href="#[5c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
@@ -914,7 +914,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[92]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_TIM_Base_Init
 </UL>
 
-<P><STRONG><a name="[d5]"></a>HAL_TIM_Base_Start</STRONG> (Thumb, 26 bytes, Stack size 0 bytes, stm32f4xx_hal_tim.o(i.HAL_TIM_Base_Start))
+<P><STRONG><a name="[d6]"></a>HAL_TIM_Base_Start</STRONG> (Thumb, 26 bytes, Stack size 0 bytes, stm32f4xx_hal_tim.o(i.HAL_TIM_Base_Start))
 <BR><BR>[Called By]<UL><LI><a href="#[5c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
@@ -971,7 +971,8 @@ Global Symbols
 <LI><a href="#[85]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_NVIC_SetPriority
 <LI><a href="#[a4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_NVIC_EnableIRQ
 </UL>
-<BR>[Called By]<UL><LI><a href="#[a1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_UART_Init
+<BR>[Called By]<UL><LI><a href="#[b2]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MX_UART5_Init
+<LI><a href="#[a1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_UART_Init
 </UL>
 
 <P><STRONG><a name="[b7]"></a>HAL_UART_RxCpltCallback</STRONG> (Thumb, 2 bytes, Stack size 0 bytes, stm32f4xx_hal_uart.o(i.HAL_UART_RxCpltCallback))
@@ -987,7 +988,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[5c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
-<P><STRONG><a name="[d7]"></a>HAL_UART_Transmit_IT</STRONG> (Thumb, 62 bytes, Stack size 0 bytes, stm32f4xx_hal_uart.o(i.HAL_UART_Transmit_IT))
+<P><STRONG><a name="[d3]"></a>HAL_UART_Transmit_IT</STRONG> (Thumb, 62 bytes, Stack size 0 bytes, stm32f4xx_hal_uart.o(i.HAL_UART_Transmit_IT))
 <BR><BR>[Called By]<UL><LI><a href="#[5c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
@@ -1013,7 +1014,7 @@ Global Symbols
 <LI><a href="#[8f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GPIO_WritePin
 </UL>
 <BR>[Called By]<UL><LI><a href="#[ac]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;LIS3DSH_ReadACC
-<LI><a href="#[d3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;readACC
+<LI><a href="#[d4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;readACC
 </UL>
 
 <P><STRONG><a name="[ac]"></a>LIS3DSH_ReadACC</STRONG> (Thumb, 336 bytes, Stack size 48 bytes, lis3dsh.o(i.LIS3DSH_ReadACC))
@@ -1024,7 +1025,7 @@ Global Symbols
 <LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_d2f
 <LI><a href="#[aa]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;LIS3DSH_Read
 </UL>
-<BR>[Called By]<UL><LI><a href="#[d3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;readACC
+<BR>[Called By]<UL><LI><a href="#[d4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;readACC
 </UL>
 
 <P><STRONG><a name="[a9]"></a>LIS3DSH_Write</STRONG> (Thumb, 68 bytes, Stack size 24 bytes, lis3dsh.o(i.LIS3DSH_Write))
@@ -1036,10 +1037,11 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[a7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;LIS3DSH_Init
 </UL>
 
-<P><STRONG><a name="[b2]"></a>MX_UART5_Init</STRONG> (Thumb, 42 bytes, Stack size 8 bytes, main.o(i.MX_UART5_Init))
+<P><STRONG><a name="[b2]"></a>MX_UART5_Init</STRONG> (Thumb, 48 bytes, Stack size 8 bytes, main.o(i.MX_UART5_Init))
 <BR><BR>[Stack]<UL><LI>Max Depth = 112<LI>Call Chain = MX_UART5_Init &rArr; HAL_UART_Init &rArr; HAL_UART_MspInit &rArr; HAL_GPIO_Init
 </UL>
-<BR>[Calls]<UL><LI><a href="#[a1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_UART_Init
+<BR>[Calls]<UL><LI><a href="#[a2]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_UART_MspInit
+<LI><a href="#[a1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_UART_Init
 </UL>
 <BR>[Called By]<UL><LI><a href="#[5c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
@@ -1091,7 +1093,7 @@ Global Symbols
 <P><STRONG><a name="[a8]"></a>__2printf</STRONG> (Thumb, 0 bytes, Stack size 24 bytes, printfa.o(i.__0printf))
 <BR><BR>[Stack]<UL><LI>Max Depth = 24<LI>Call Chain = __2printf
 </UL>
-<BR>[Called By]<UL><LI><a href="#[d3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;readACC
+<BR>[Called By]<UL><LI><a href="#[d4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;readACC
 <LI><a href="#[a7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;LIS3DSH_Init
 <LI><a href="#[5c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
@@ -1236,7 +1238,7 @@ Global Symbols
 <LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_d2f
 <LI><a href="#[cd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_f2d
 </UL>
-<BR>[Called By]<UL><LI><a href="#[d3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;readACC
+<BR>[Called By]<UL><LI><a href="#[d4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;readACC
 </UL>
 
 <P><STRONG><a name="[d1]"></a>getRoll</STRONG> (Thumb, 92 bytes, Stack size 24 bytes, readacc.o(i.getRoll))
@@ -1248,7 +1250,7 @@ Global Symbols
 <LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_d2f
 <LI><a href="#[cd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_f2d
 </UL>
-<BR>[Called By]<UL><LI><a href="#[d3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;readACC
+<BR>[Called By]<UL><LI><a href="#[d4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;readACC
 </UL>
 
 <P><STRONG><a name="[d2]"></a>initializeACC</STRONG> (Thumb, 26 bytes, Stack size 0 bytes, main.o(i.initializeACC))
@@ -1259,18 +1261,18 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[5c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
-<P><STRONG><a name="[5c]"></a>main</STRONG> (Thumb, 638 bytes, Stack size 0 bytes, main.o(i.main))
-<BR><BR>[Stack]<UL><LI>Max Depth = 280<LI>Call Chain = main &rArr; readACC &rArr; getRoll &rArr; __hardfp_atan2 &rArr; atan &rArr; __hardfp_atan &rArr; __kernel_poly &rArr; __aeabi_dadd &rArr; _double_epilogue &rArr; _double_round
+<P><STRONG><a name="[5c]"></a>main</STRONG> (Thumb, 658 bytes, Stack size 8 bytes, main.o(i.main))
+<BR><BR>[Stack]<UL><LI>Max Depth = 288<LI>Call Chain = main &rArr; readACC &rArr; getRoll &rArr; __hardfp_atan2 &rArr; atan &rArr; __hardfp_atan &rArr; __kernel_poly &rArr; __aeabi_dadd &rArr; _double_epilogue &rArr; _double_round
 </UL>
-<BR>[Calls]<UL><LI><a href="#[d6]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_ADC_Start_IT
+<BR>[Calls]<UL><LI><a href="#[d7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_ADC_Start_IT
 <LI><a href="#[88]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
 <LI><a href="#[80]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Init
 <LI><a href="#[a8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__2printf
 <LI><a href="#[8f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GPIO_WritePin
-<LI><a href="#[d5]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_TIM_Base_Start
+<LI><a href="#[d6]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_TIM_Base_Start
 <LI><a href="#[92]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_TIM_Base_Init
-<LI><a href="#[d3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;readACC
-<LI><a href="#[d4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;readTap
+<LI><a href="#[d4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;readACC
+<LI><a href="#[d5]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;readTap
 <LI><a href="#[d2]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;initializeACC
 <LI><a href="#[cf]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;blinky
 <LI><a href="#[cc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;accStable
@@ -1279,13 +1281,13 @@ Global Symbols
 <LI><a href="#[b0]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MX_TIM2_Init
 <LI><a href="#[af]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MX_GPIO_Init
 <LI><a href="#[ad]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MX_ADC1_Init
-<LI><a href="#[d7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_UART_Transmit_IT
+<LI><a href="#[d3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_UART_Transmit_IT
 <LI><a href="#[a5]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_UART_Transmit
 <LI><a href="#[d8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_UART_GetState
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> entry9a.o(.ARM.Collect$$$$0000000B)
 </UL>
-<P><STRONG><a name="[d3]"></a>readACC</STRONG> (Thumb, 304 bytes, Stack size 40 bytes, readacc.o(i.readACC))
+<P><STRONG><a name="[d4]"></a>readACC</STRONG> (Thumb, 304 bytes, Stack size 40 bytes, readacc.o(i.readACC))
 <BR><BR>[Stack]<UL><LI>Max Depth = 280<LI>Call Chain = readACC &rArr; getRoll &rArr; __hardfp_atan2 &rArr; atan &rArr; __hardfp_atan &rArr; __kernel_poly &rArr; __aeabi_dadd &rArr; _double_epilogue &rArr; _double_round
 </UL>
 <BR>[Calls]<UL><LI><a href="#[a8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__2printf
@@ -1298,7 +1300,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[5c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
-<P><STRONG><a name="[d4]"></a>readTap</STRONG> (Thumb, 302 bytes, Stack size 56 bytes, main.o(i.readTap))
+<P><STRONG><a name="[d5]"></a>readTap</STRONG> (Thumb, 302 bytes, Stack size 56 bytes, main.o(i.readTap))
 <BR><BR>[Stack]<UL><LI>Max Depth = 144<LI>Call Chain = readTap &rArr; __aeabi_dsub &rArr; __aeabi_dadd &rArr; _double_epilogue &rArr; _double_round
 </UL>
 <BR>[Calls]<UL><LI><a href="#[cd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_f2d
@@ -1419,7 +1421,7 @@ Local Symbols
 <LI><a href="#[aa]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;LIS3DSH_Read
 </UL>
 
-<P><STRONG><a name="[c7]"></a>_fp_digits</STRONG> (Thumb, 334 bytes, Stack size 56 bytes, printfa.o(i._fp_digits), UNUSED)
+<P><STRONG><a name="[c7]"></a>_fp_digits</STRONG> (Thumb, 366 bytes, Stack size 64 bytes, printfa.o(i._fp_digits), UNUSED)
 <BR><BR>[Calls]<UL><LI><a href="#[6f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_uldivmod
 <LI><a href="#[63]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_dadd
 <LI><a href="#[72]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_d2ulz
