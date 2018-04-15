@@ -20,38 +20,40 @@ exports.helloWorld = functions.https.onRequest((request, response) => {
  	response.send("Hello from Firebase!");
 });
 
-// exports.pitchandroll = functions.https.onRequest((request, response) => {
-// 	var plotly = require('plotly')(priv.username, priv.apiKey);
+exports.pitchandroll = functions.https.onRequest((request, response) => {
+	var plotly = require('plotly')(priv.username, priv.apiKey);
 
-// 	var pitch = {
-// 	  x: [1, 2, 3, 4],
-// 	  y: [2, 15, 13, 17],
-// 	  name: 'Pitch'
-// 	};
+	var pitch = {
+	  x: [1, 2, 3, 4],
+	  y: [2, 15, 13, 17],
+	  name: 'Pitch'
+	};
 
-// 	var roll = {
-// 	  x: [1, 2, 3, 4],
-// 	  y: [3, 12, 14, 18],
-// 	  name: 'Roll'
-// 	};
+	var roll = {
+	  x: [1, 2, 3, 4],
+	  y: [3, 12, 14, 18],
+	  name: 'Roll'
+	};
 
-// 	var data = [pitch, roll];
-// 	var graphOptions = {title:"Pitch and Roll", filename: "date-axes", fileopt: "overwrite"};
+	var data = [pitch, roll];
+	var graphOptions = {title:"Pitch and Roll", filename: "date-axes", fileopt: "overwrite"};
 
-// 	plotly.plot(data, graphOptions, (err, msg) => {
-// 	    if(err){
-// 	    	response.send("Pitch and roll plotting failed: " + err)
-// 	    }
-// 	    console.log("Successfully plotted: " + msg)
-// 	    response.send("Successfully plotted: " + msg)
-// 	});
-// });
+	plotly.plot(data, graphOptions, (err, msg) => {
+	    if(err){
+	    	response.send("Pitch and roll plotting failed: " + err)
+	    }
+	    console.log("Successfully plotted: " + msg)
+	    response.send("Successfully plotted: " + msg)
+	});
+});
 
 exports.uploadRec = functions.storage.object().onChange((event) => {
   const object = event.data;
   const contentType = object.contentType;
   const file = gcs.bucket(object.bucket).file(object.name);
   const fileName = path.basename(object.name);
+
+  console.log(object)
 
  // Exit if this is a move or deletion event.
   if (object.resourceState === 'not_exists') {
@@ -67,7 +69,8 @@ exports.uploadRec = functions.storage.object().onChange((event) => {
   // Exit if this is triggered on a file that is not an audio.
   else if (contentType.startsWith('text/plain')) {
     accGraph(object.name, object.bucket, object.metadata)
-    return console.log('Plotting pitch and roll')
+    console.log('Plotting pitch and roll');
+    return null;
   } 
 
   else if (contentType.startsWith('image/')){
@@ -87,21 +90,26 @@ exports.uploadRec = functions.storage.object().onChange((event) => {
 
 function accGraph(filePath, bucketName, metadata) {
   let downloadUrl = "https://firebasestorage.googleapis.com/v0/b/" + bucketName + "/o/" + filePath + "?alt=media&token=" + metadata.firebaseStorageDownloadTokens
-
   // const url = "https://firebasestorage.googleapis.com/v0/b/microp-g2.appspot.com/o/boardData%2Ftestfisdfle%20(1).txt?alt=media&token=4df767d9-a74b-46fa-a83f-42055f715a8e"
     const https = require('https')
-    const plotly = require('plotly')
+    // const plotly = require('plotly')('wangtiffany', 'JKAv8orhvjPXqSAQUO6F');
 
     https.get(downloadUrl, (res) => {
         res.setEncoding('utf8');
         res.on('data', (data) => {
             console.log('text file parsing start')
+            console.log(data)
 
             var plotly = require('plotly')(priv.username, priv.apiKey);
             var array = data.split("\n").slice(0, -1)
             var X = array[0].split(" ").slice(0, -1).map(Number)
             var Y = array[1].split(" ").slice(0, -1).map(Number)
             var Z = array[2].split(" ").slice(0, -1).map(Number)
+
+            console.log('X: ' + X)
+            console.log('Y: ' + Y)
+            console.log('Z: ' + Z)
+
 
             var pitch_array = []
             var roll_array = []
@@ -110,6 +118,9 @@ function accGraph(filePath, bucketName, metadata) {
                 pitch_array.push(Math.atan(-1 * X[i] / Z[i]))
                 roll_array.push(Math.atan(Y[i]/Math.sqrt(X[i] * X[i] + Z[i] * Z[i])))
             }
+
+            console.log('pitch: ' + pitch_array)
+            console.log('roll: ' + roll_array)
 
             var x_array = Array.apply(null, {length: pitch_array.length}).map(Number.call, Number)
              var pitch = {

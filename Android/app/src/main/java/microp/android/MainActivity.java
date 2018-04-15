@@ -10,6 +10,7 @@ package microp.android;
 
 import android.Manifest;
 import android.app.Activity;
+import java.util.Random;
 //import android.bluetooth.BluetoothAdapter;
 //import android.bluetooth.BluetoothDevice;
 //import android.bluetooth.BluetoothGatt;
@@ -55,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
     FirebaseStorage storage = FirebaseStorage.getInstance();
     // Create a storage reference from our app
     StorageReference storageRef = storage.getReference();
+    Random r = new Random();
 
     // Create file metadata including the content type
 //
@@ -100,13 +102,17 @@ public class MainActivity extends AppCompatActivity {
 //
 //        handler = new Handler();
 
-
         //upload Acc
         try {// because it throws an exception
-//            byte[][] test = {SEND_ACC_CODE, SEND_VOICE_CODE, SEND_ACC_CODE};
-//            uploadAcc(test);
-            byte[] test_voice = SEND_VOICE_CODE;
-            uploadVoice(test_voice);
+            byte[][] test = new byte[3][20];
+            for(int i = 0 ; i < test.length ; i++){
+                for(int j = 0 ; j < test[0].length ; j++){
+                   test[i][j] = (byte)r.nextInt(8);
+                }
+            }
+            uploadAcc(test);
+//            byte[] test_voice = SEND_VOICE_CODE;
+//            uploadVoice(test_voice);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -352,7 +358,7 @@ public class MainActivity extends AppCompatActivity {
 //    }
 
     void uploadVoice(byte[] voiceArray) throws IOException {
-        StorageReference localRef = storageRef.child("boardData/voice.raw");
+        StorageReference localRef = storageRef.child("voice.raw");
         // Now we need to use the UploadTask class to upload to our cloud
         String s = "";
         int counter = 0 ;
@@ -380,14 +386,16 @@ public class MainActivity extends AppCompatActivity {
 
 
     void uploadAcc(byte[][] acc) throws IOException {
-        StorageReference localRef = storageRef.child("boardData/graph.txt");
+        StorageReference localRef = storageRef.child("acc_graph.txt");
+        StorageMetadata metadata = new StorageMetadata.Builder()
+                           .setContentType("text/plain")
+                           .build();
         // the text we will upload
-//        String someTextToUpload = "1 2 3 4 5 6 7 8 9 ";
         String stringAcc = toIntString(acc);
         //convert the text to bytes
         byte[] file = stringAcc.getBytes();
         // Now we need to use the UploadTask class to upload to our cloud
-        UploadTask uploadTask = localRef.putBytes(file);
+        UploadTask uploadTask = localRef.putBytes(file, metadata);
         uploadTask.addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception exception) {
@@ -420,7 +428,7 @@ public class MainActivity extends AppCompatActivity {
             for(int i = 0 ; i < voice.length - 1 ; i+=2){
                 line += (voice[i + 1] << 8 + voice[i]) + " ";
             }
-            result += line + "\n ";
+            result += line + "\n";
         }
         return result;
     }
