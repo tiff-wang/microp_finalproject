@@ -59,7 +59,7 @@ exports.uploadRec = functions.storage.object().onChange((event) => {
     return null;
   }
 
-  if (fileName.startsWith('proc_')){
+  if (path.basename(object.name).startsWith('proc_')){
   	console.log('Already processed file');
     return null;
   }
@@ -74,12 +74,14 @@ exports.uploadRec = functions.storage.object().onChange((event) => {
     return console.log('graph uploaded')
   }
 
-  else if (contentType.startsWith('audio/')){
+  else if (object.name.endsWith('.raw')){
     // add voice recognition 
+    voiceRec(object.name, object.bucket, object.metadata)
     return console.log('audio file')
   }
 
-  return console.log('ended with not a file of interest');
+  console.log('ended with not a file of interest');
+  return null;
 });
 
 
@@ -157,6 +159,50 @@ function accGraph(filePath, bucketName, metadata) {
                  });
              });
         });
+    });
+}
+
+function voiceRec(filePath, bucketName, metadata){
+  // Imports the Google Cloud client library
+  const speech = require('@google-cloud/speech');
+
+  // Creates a client
+  const client = new speech.SpeechClient();
+
+
+  const gcsUri = 'gs://' + bucketName + '/' + filePath;
+  const encoding = 'LINEAR16';
+  const sampleRateHertz = 8000;
+  const languageCode = 'en-US';
+
+  const config = {
+    encoding: encoding,
+    sampleRateHertz: sampleRateHertz,
+    languageCode: languageCode,
+  };
+  const audio = {
+    uri: gcsUri,
+  };
+
+  const request = {
+    config: config,
+    audio: audio,
+  };
+
+  console.log('sending data to Google Speech API')
+
+  // Detects speech in the audio file
+  client
+    .recognize(request)
+    .then(data => {
+      const response = data[0];
+      const transcription = response.results
+        .map(result => result.alternatives[0].transcript)
+        .join('\n');
+      return console.log('Transcription: ', transcription);
+    })
+    .catch(err => {
+      console.error('ERROR:', err);
     });
 }
 
