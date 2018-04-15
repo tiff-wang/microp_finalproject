@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">android</string>
+    <string name="app_name">ECSE 426</string>
     <string name="ble_not_supported">BLE is not supported on this device</string>
     <string name="ble_disabled">Bluetooth Disabled</string>
     <string name="service_not_found">Service not found</string>
