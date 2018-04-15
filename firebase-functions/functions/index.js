@@ -133,14 +133,7 @@ function accGraph(filePath, bucketName, metadata) {
                  }
 
                 console.log('starting upload')
-
                 const fs = require('fs')
-
-                // var gcloud = require('google-cloud')
-                // var gcs = gcloud.storage({
-                //     projectId: 'microp-g2',
-                //     keyFilename: './routes/microp-g2-firebase-adminsdk-xhb3e-6b49ce3aab.json'
-                // });
 
                 var bucket = gcs.bucket(bucketName)
                 const tempLocalFile = path.join(os.tmpdir(), 'graph.png');
@@ -166,3 +159,47 @@ function accGraph(filePath, bucketName, metadata) {
         });
     });
 }
+
+
+exports.syncRecognizeGCS = functions.https.onRequest((req, res) => {
+  // Imports the Google Cloud client library
+  const speech = require('@google-cloud/speech');
+
+  // Creates a client
+  const client = new speech.SpeechClient();
+
+
+  const gcsUri = 'gs://microp-g2.appspot.com/test-online.raw';
+  const encoding = 'LINEAR16';
+  const sampleRateHertz = 8000;
+  const languageCode = 'en-US';
+
+  const config = {
+    encoding: encoding,
+    sampleRateHertz: sampleRateHertz,
+    languageCode: languageCode,
+  };
+  const audio = {
+    uri: gcsUri,
+  };
+
+  const request = {
+    config: config,
+    audio: audio,
+  };
+
+  // Detects speech in the audio file
+  client
+    .recognize(request)
+    .then(data => {
+      const response = data[0];
+      const transcription = response.results
+        .map(result => result.alternatives[0].transcript)
+        .join('\n');
+      console.log('Transcription: ', transcription)
+      return res.send('Transcription: ', transcription);
+    })
+    .catch(err => {
+      console.error('ERROR:', err);
+    });
+})

@@ -55,11 +55,8 @@ public class MainActivity extends AppCompatActivity {
     FirebaseStorage storage = FirebaseStorage.getInstance();
     // Create a storage reference from our app
     StorageReference storageRef = storage.getReference();
-    StorageReference ourFileRef = storageRef.child("boardData/testfisdfle.txt");
+
     // Create file metadata including the content type
-    StorageMetadata metadata = new StorageMetadata.Builder()
-            .setContentType("audio/x-wav")
-            .build();
 //
 //    private BluetoothAdapter bluetoothAdapter;
 //    private ScanCallback scanCallback;
@@ -103,8 +100,14 @@ public class MainActivity extends AppCompatActivity {
 //
 //        handler = new Handler();
 
+
+        //upload Acc
         try {// because it throws an exception
-            uploadAcc();
+//            byte[][] test = {SEND_ACC_CODE, SEND_VOICE_CODE, SEND_ACC_CODE};
+//            uploadAcc(test);
+            byte[] test_voice = SEND_VOICE_CODE;
+            uploadVoice(test_voice);
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -348,13 +351,43 @@ public class MainActivity extends AppCompatActivity {
 //        }
 //    }
 
-    void uploadAcc() throws IOException {
-        // the text we will upload
-        String someTextToUpload = "1 2 3 4 5 6 7 8 9 ";
-        //convert the text to bytes
-        byte[] file = someTextToUpload.getBytes();
+    void uploadVoice(byte[] voiceArray) throws IOException {
+        StorageReference localRef = storageRef.child("boardData/voice.raw");
         // Now we need to use the UploadTask class to upload to our cloud
-        UploadTask uploadTask = ourFileRef.putBytes(file);
+        String s = "";
+        int counter = 0 ;
+        for(int i = 0 ; i < voiceArray.length / 2 ; i++){
+            s += Integer.toHexString(0x10000 | (voiceArray[i * 2] << 8) + voiceArray[i * 2 + 1]).substring(1) + " " ;
+            counter = (counter + 1) % 8;
+            if(counter == 0 ) s += "\n";
+        }
+
+        UploadTask uploadTask = localRef.putBytes(s.getBytes());
+        uploadTask.addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception exception) {
+                // Handle unsuccessful uploads
+                System.out.println("Upload Failed");
+            }
+        }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>(){
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                // taskSnapshot.getMetadata() contains file metadata such as size, content-type, and download Uri downloadUrl = taskSnapshot.getDownloadUrl();
+                System.out.println("Upload Success");
+            }
+        });
+    }
+
+
+    void uploadAcc(byte[][] acc) throws IOException {
+        StorageReference localRef = storageRef.child("boardData/graph.txt");
+        // the text we will upload
+//        String someTextToUpload = "1 2 3 4 5 6 7 8 9 ";
+        String stringAcc = toIntString(acc);
+        //convert the text to bytes
+        byte[] file = stringAcc.getBytes();
+        // Now we need to use the UploadTask class to upload to our cloud
+        UploadTask uploadTask = localRef.putBytes(file);
         uploadTask.addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception exception) {
@@ -380,14 +413,14 @@ public class MainActivity extends AppCompatActivity {
         return result;
     }
 
-    public static String toIntString(ArrayList<byte[]> array){
+    public static String toIntString(byte[][] array){
         String result = "";
         for(byte[] voice: array){
             String line = "";
             for(int i = 0 ; i < voice.length - 1 ; i+=2){
                 line += (voice[i + 1] << 8 + voice[i]) + " ";
             }
-            result += line;
+            result += line + "\n ";
         }
         return result;
     }
