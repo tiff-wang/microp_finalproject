@@ -50,47 +50,47 @@ UART_HandleTypeDef huart5;
 
 /* User Private variables ---------------------------------------------------------*/
 	//ACC.
-	uint8_t status;							
-	float Buffer[3];						// Buffer for x,y and z for readACC
-	float accX, accY, accZ;
-	uint8_t MyFlag = 0;					// Flagging system used for??? --> gets updated in SysTick_Handler --> 50Hz???
-	//General Logic
-	int state = 0;
-	//Tap detection
-	int tap = 0;
-	int accCounter = 0;									//Used for double tap detection
-	int minThreshold = 230;							//Gap need to be determined --> counter uses HAL_GetTick()
-	int maxThreshold = 1500;
-	int boolFirstPass = 1; 							//Boolean serving to tell that first tap occured
-	int previousTap = -1;								//Served to check when was the first tap was done
-	int windowSize = 10;								//Length of window for recodring accelorometer
-	float accXX[10] = {0.0};
-	float accYY[10] = {0.0};
-	float accZZ[10] = {0.0};
-	
-	//stabilized state
-	int nbValues = 0;										//To ensure accXX, accYY, or accZZ has gotten ride of all the 0 it was initialized to
-	int stable = 0;											//For accStable(); Return variable 
-	int stableNb = 0;										//Served to get the number of times accStable() returns 1 in a row
-	//MIC
-	int firstPass = 1; //boolean for allowing 1 sec delay before reading mic. data
-	int prevCNT = 0; 	 //Counter for allowing 1 sec delay before reading mic. data + use for timing the number return (N) for LED -BLINKY()
-	const int audioBufferSize =12000;
-	uint8_t audioBuffer[audioBufferSize] = {0};
-	int audioIndex = 0 ;
-	uint8_t transBuffer[1] = {0};		//Indicate to the nucleo board if reading mic or pitch and roll	
-	//int adcReadings =0;						//Use for testing purposes (print)
-	int audioBool =0; 							//Boolean for audio reading (used in state 3)
-	int audioDone = 0;
-	//Discovery board - pitch and roll
-	const int pnrSize = 1000;
-	float pitch[pnrSize] = {0};
-	float roll[pnrSize] ={0};
-	//Blinky
-	int nbBlink = 0;
-	
-	int ADC_RES = 12;
-	
+uint8_t status;							
+float Buffer[3];						// Buffer for x,y and z for readACC
+float accX, accY, accZ;
+uint8_t MyFlag = 0;					// Flagging system used for??? --> gets updated in SysTick_Handler --> 50Hz???
+//General Logic
+int state = 0;
+//Tap detection
+int tap = 0;
+int accCounter = 0;									//Used for double tap detection
+int minThreshold = 230;							//Gap need to be determined --> counter uses HAL_GetTick()
+int maxThreshold = 1500;
+int boolFirstPass = 1; 							//Boolean serving to tell that first tap occured
+int previousTap = -1;								//Served to check when was the first tap was done
+int windowSize = 10;								//Length of window for recodring accelorometer
+float accXX[10] = {0.0};
+float accYY[10] = {0.0};
+float accZZ[10] = {0.0};
+
+//stabilized state
+int nbValues = 0;										//To ensure accXX, accYY, or accZZ has gotten ride of all the 0 it was initialized to
+int stable = 0;											//For accStable(); Return variable 
+int stableNb = 0;										//Served to get the number of times accStable() returns 1 in a row
+//MIC
+int firstPass = 1; //boolean for allowing 1 sec delay before reading mic. data
+int prevCNT = 0; 	 //Counter for allowing 1 sec delay before reading mic. data + use for timing the number return (N) for LED -BLINKY()
+const int audioBufferSize =12000;
+uint8_t audioBuffer[audioBufferSize] = {0};
+int audioIndex = 0 ;
+uint8_t transBuffer[1] = {0};		//Indicate to the nucleo board if reading mic or pitch and roll	
+//int adcReadings =0;						//Use for testing purposes (print)
+int audioBool =0; 							//Boolean for audio reading (used in state 3)
+int audioDone = 0;
+//Discovery board - pitch and roll
+const int pnrSize = 1000;
+float pitch[pnrSize] = {0};
+float roll[pnrSize] ={0};
+//Blinky
+int nbBlink = 0;
+
+int ADC_RES = 12;
+
 	
 
 	
@@ -110,19 +110,6 @@ int accStable(void);
 void MX_UART5_Init(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
-	
-	audioBuffer[audioIndex] = HAL_ADC_GetValue(&hadc1);
-	audioIndex++;
-	
-	if(audioIndex >= audioBufferSize){
-		HAL_ADC_Stop_IT(&hadc1); 
-		HAL_TIM_Base_Stop(&htim2);
-		audioDone = 1;
-	}
-}
-	
 	
 //Blinky
 void blinky(int N);
@@ -143,17 +130,23 @@ int main(void)
 	
 	MX_UART5_Init();
 	
-	//HAL_MspInit();
-	//HAL_ADC_MspInit(&hadc1);
 	
-	
-	//HAL_ADC_Start_IT(&hadc1);
-	// and example of sending a data through UART, but you need to configure the UART block:
-	// HAL_UART_Transmit(&huart2,"FinalProject\n",14,2000); 
-	
+
+/* FSM 
+	States
+	0: wait for board stability 
+	1: read accelerometer data to detect tap 
+	2: case 1 tap: samples voice data (turns on ADC)
+	3: send data to Nucleo through UART (pitch and roll / voice)
+	4: wait for response and blinks N times 
+	5: case 2 taps: sample acc data
+
+*/
+
 
   while (1)
   {
+  		// used to test USART 
 		uint8_t msg[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 		HAL_UART_Transmit_IT(&huart5, msg, sizeof(msg)/sizeof(msg[0]));
 		
@@ -251,9 +244,7 @@ int main(void)
 				break;
 			}
 			case 3:
-			{
-				//Question: When sending data with Hal_UART... does code keep running or waits till all data is sent, then jumps to the nextl line?
-				
+			{	
 				//Transfer data to Nucleo Board (dataToSend)
 				//Data to sent: Audio(1s) OR pitch and roll(10s)
 				if(audioBool){
@@ -326,11 +317,12 @@ int main(void)
 			case 4:
 			{
 				//Wait till receive data from Nucleo Board (N)
-				//If(data.recceived)
-				//int N = data.get;
-				blinky(6);
+				// If(data.recceived){
+				// int N = data.get;
+				   // blinky(6);
+					blinky(N)
+				// }
 				state = 0;
-				//Blink LED2 N times -->blinky(N)
 				break;
 			}
 			case 5:
@@ -340,14 +332,10 @@ int main(void)
 				HAL_GPIO_WritePin(GPIOD, LD5_Pin, GPIO_PIN_SET);	//RED LED
 				readACC();
 				
-				//TO VALIDATE WHEN CHANGING THE DISC. FREQUENCY******************************************************************************************
-				
 				if(nbValues >= 1016){
 					//send data --> go to state 3
 					
 					HAL_GPIO_WritePin(GPIOD, LD5_Pin, GPIO_PIN_RESET);	//RED LED
-					//printf("pitch[0]: %4f    roll[0]: %4f     nbValues: %i\n", pitch[0], roll[0], nbValues);
-					//printf("pitch[12]: %4f    roll[12]: %4f     nbValues: %i\n", pitch[12], roll[12], nbValues);
 					
 					nbValues = 0;
 					state = 3;
@@ -667,7 +655,11 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 
-
+/**
+  * @brief  This function intializes accelerometer
+  * @param  ADC_HandleTypeDef adc handler
+  * @retval None
+  */
 void initializeACC(void){
 	
 	Acc_instance.Axes_Enable				= LIS3DSH_XYZ_ENABLE;
@@ -680,13 +672,11 @@ void initializeACC(void){
 	LIS3DSH_Init(&Acc_instance);	
 	
 	
-	/* Enabling interrupt conflicts with push button
-  ACC_Interrupt_Config.Dataready_Interrupt	= LIS3DSH_DATA_READY_INTERRUPT_ENABLED;
-	ACC_Interrupt_Config.Interrupt_signal			= LIS3DSH_ACTIVE_HIGH_INTERRUPT_SIGNAL;
-	ACC_Interrupt_Config.Interrupt_type				= LIS3DSH_INTERRUPT_REQUEST_PULSED;
-	
-	LIS3DSH_DataReadyInterruptConfig(&ACC_Interrupt_Config);
-	*/
+/**
+  * @brief  This function detects whether the board is stable 
+  * @param  ADC_HandleTypeDef adc handler
+  * @retval None
+  */
 }
 
 int accStable(void){
@@ -722,6 +712,12 @@ int accStable(void){
 }
 
 
+/**
+  * @brief  This function reads the acc values
+  * @param  None
+  * @retval None
+  */
+
 int readTap(void){
 	int tappy = 0;
 	float tempMaxY, tempMaxX, tempMaxZ = -INFINITY;					//Used for readTap() for maximum and minumum evaluation
@@ -753,6 +749,12 @@ int readTap(void){
 	return tappy;
 }
 
+
+/**
+  * @brief  This function makes LED 5 Blinks N times
+  * @param  int N 
+  * @retval None
+  */
 void blinky(int N){
 	int counter = HAL_GetTick();
 	int idx = 1;
@@ -773,25 +775,23 @@ void blinky(int N){
 	HAL_GPIO_WritePin(GPIOD, LD5_Pin, GPIO_PIN_RESET);
 }
 
-// Initializing variable and arrays for FIR FILTER
-int previousValues[4] = { 0, 0, 0, 0 }; //1st input is stored in position 0, the 2nd input into position 1, and so on. When array is full, restart at position 0.
-float coeffs[5] = { 0.0246, 0.2344, 0.4821, 0.2344, 0.0246 }; //PRE-DEFINED CONSTANTS 4th order from matlab fir1()
-
-int idx = 3;
-
-
-float FIR_C(int Input) {
-	float filtered = coeffs[0] * Input
-		+ coeffs[1] * previousValues[idx % 4]
-		+ coeffs[2] * previousValues[(idx + 3) % 4]
-		+ coeffs[3] * previousValues[(idx + 2) % 4]
-		+ coeffs[4] * previousValues[(idx + 1) % 4];
+/**
+  * @brief  This function is called everytime the ADC conversion is complete
+  * @param  ADC_HandleTypeDef adc handler
+  * @retval None
+  */
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
 	
-	idx++;
-	idx %= 4;
-	previousValues[idx] = Input;
-	return filtered;
+	audioBuffer[audioIndex] = HAL_ADC_GetValue(&hadc1);
+	audioIndex++;
+	
+	if(audioIndex >= audioBufferSize){
+		HAL_ADC_Stop_IT(&hadc1); 
+		HAL_TIM_Base_Stop(&htim2);
+		audioDone = 1;
+	}
 }
+	
 /* USER CODE END 4 */
 
 /**
