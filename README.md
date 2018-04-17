@@ -1,10 +1,10 @@
 # Micro Processors ECSE 426 - Final Project
 
-##### Group 2 
-Isaac Chan 
-Jérôme Parent-Levesque 
-Mathieu Savoie
-Tiffany Wang 
+### Group 2 
+Isaac Chan <br />
+Jérôme Parent-Levesque <br />
+Mathieu Savoie <br />
+Tiffany Wang <br />
 
 #### Project description 
 
@@ -31,6 +31,6 @@ The android app is developed on Android Studio using SDK 23 on Android v8.
 
 **Firebase** 
 The firebase functions are deployed using Node.JS. You can easily deploy new functions using the npm package 'firebase tools'
-To run the project, please clone the repo and do 'npm install' to install the dependencies. 
+To run the project, please clone the repo and do `npm install` to install the dependencies. 
 The voice recognition is done using Google Speech API and the graph was done using Plotly. 
 
