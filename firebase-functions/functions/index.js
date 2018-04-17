@@ -98,7 +98,6 @@ function accGraph(filePath, bucketName, metadata) {
         res.setEncoding('utf8');
         res.on('data', (data) => {
             console.log('text file parsing start')
-            console.log(data)
 
             var plotly = require('plotly')(priv.username, priv.apiKey);
             var array = data.split("\n").slice(0, -1)
@@ -124,14 +123,14 @@ function accGraph(filePath, bucketName, metadata) {
 
             var x_array = Array.apply(null, {length: pitch_array.length}).map(Number.call, Number)
              var pitch = {
-               x: pitch_array,
-               y: x_array,
+               x: x_array,
+               y: pitch_array,
                name: 'Pitch'
              };
 
              var roll = {
-               x: roll_array, 
-               y: x_array,
+               x: x_array, 
+               y: roll_array,
                name: 'Roll'
              };
 

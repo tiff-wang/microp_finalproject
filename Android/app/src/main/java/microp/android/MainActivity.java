@@ -104,13 +104,15 @@ public class MainActivity extends AppCompatActivity {
 
         //upload Acc
         try {// because it throws an exception
-            byte[][] test = new byte[3][20];
-            for(int i = 0 ; i < test.length ; i++){
-                for(int j = 0 ; j < test[0].length ; j++){
-                   test[i][j] = (byte)r.nextInt(8);
-                }
-            }
-            uploadAcc(test);
+//            byte[][] test = new byte[3][20];
+//            for(int i = 0 ; i < test.length ; i++){
+//                for(int j = 0 ; j < test[0].length ; j++){
+//                   test[i][j] = (byte)r.nextInt(8);
+//                }
+//            }
+//            uploadAcc(test);
+
+
 //            byte[] test_voice = SEND_VOICE_CODE;
 //            uploadVoice(test_voice);
 
@@ -231,8 +233,8 @@ public class MainActivity extends AppCompatActivity {
 //                    receivedBytes.toArray(byteArray);
 //
 //                    // TODO Tiff: do something with 'byteArray' (Byte[])
-//                    // To know if the bytes are for voice or acc, use:
-//                    // captureType == CaptureType.Voice (or CaptureType.Acc)
+//                     To know if the bytes are for voice or acc, use:
+//                     captureType == CaptureType.Voice (or CaptureType.Acc)
 //
 //                    captureType = CaptureType.None; // We are done recording
 //
@@ -363,7 +365,7 @@ public class MainActivity extends AppCompatActivity {
         String s = "";
         int counter = 0 ;
         for(int i = 0 ; i < voiceArray.length / 2 ; i++){
-            s += Integer.toHexString(0x10000 | (voiceArray[i * 2] << 8) + voiceArray[i * 2 + 1]).substring(1) + " " ;
+            s += Integer.toHexString(0x10000 | (voiceArray[i * 2 + 1] << 8) + voiceArray[i * 2]).substring(1) + " " ;
             counter = (counter + 1) % 8;
             if(counter == 0 ) s += "\n";
         }
