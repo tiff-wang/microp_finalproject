@@ -152,11 +152,10 @@ int main(void)
 	// HAL_UART_Transmit(&huart2,"FinalProject\n",14,2000); 
 	
 
-
   while (1)
   {
-		char msg[] = "hi\n";
-		HAL_UART_Transmit_IT(&huart5, (uint8_t*)msg, sizeof(msg)/sizeof(msg[0]));
+		uint8_t msg[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+		HAL_UART_Transmit_IT(&huart5, msg, sizeof(msg)/sizeof(msg[0]));
 		
 	
 		switch(state) {
