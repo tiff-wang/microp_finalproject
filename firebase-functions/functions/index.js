@@ -16,10 +16,13 @@ const os = require('os');
  // Create and Deploy Your First Cloud Functions
  // https://firebase.google.com/docs/functions/write-firebase-functions
 
+// returns response "Hello from Firebase" on HTTP request --> test
 exports.helloWorld = functions.https.onRequest((request, response) => {
  	response.send("Hello from Firebase!");
 });
 
+
+// return graph url on HTTP request . 
 exports.pitchandroll = functions.https.onRequest((request, response) => {
 	var plotly = require('plotly')(priv.username, priv.apiKey);
 
@@ -47,6 +50,9 @@ exports.pitchandroll = functions.https.onRequest((request, response) => {
 	});
 });
 
+
+// uploadRec triggered on storage change event (delete, upload, rename etc)
+// calls different functions based on type of files uploaded
 exports.uploadRec = functions.storage.object().onChange((event) => {
   const object = event.data;
   const contentType = object.contentType;
@@ -66,7 +72,6 @@ exports.uploadRec = functions.storage.object().onChange((event) => {
     return null;
   }
 
-  // Exit if this is triggered on a file that is not an audio.
   else if (contentType.startsWith('text/plain')) {
     accGraph(object.name, object.bucket, object.metadata)
     console.log('Plotting pitch and roll');
@@ -83,32 +88,30 @@ exports.uploadRec = functions.storage.object().onChange((event) => {
     return console.log('audio file')
   }
 
+  // exit without processing the file if not audio or text
   console.log('ended with not a file of interest');
   return null;
 });
 
 
+// read acc data from text file and uses plotly to graph the pitch and roll
+// graph saved back onto firebase under "graph.png"
 function accGraph(filePath, bucketName, metadata) {
   let downloadUrl = "https://firebasestorage.googleapis.com/v0/b/" + bucketName + "/o/" + filePath + "?alt=media&token=" + metadata.firebaseStorageDownloadTokens
-  // const url = "https://firebasestorage.googleapis.com/v0/b/microp-g2.appspot.com/o/boardData%2Ftestfisdfle%20(1).txt?alt=media&token=4df767d9-a74b-46fa-a83f-42055f715a8e"
     const https = require('https')
-    // const plotly = require('plotly')('wangtiffany', 'JKAv8orhvjPXqSAQUO6F');
 
+    // get text file content
     https.get(downloadUrl, (res) => {
         res.setEncoding('utf8');
         res.on('data', (data) => {
             console.log('text file parsing start')
-
             var plotly = require('plotly')(priv.username, priv.apiKey);
+
+            // parse the text file 
             var array = data.split("\n").slice(0, -1)
             var X = array[0].split(" ").slice(0, -1).map(Number)
             var Y = array[1].split(" ").slice(0, -1).map(Number)
             var Z = array[2].split(" ").slice(0, -1).map(Number)
-
-            console.log('X: ' + X)
-            console.log('Y: ' + Y)
-            console.log('Z: ' + Z)
-
 
             var pitch_array = []
             var roll_array = []
@@ -117,9 +120,6 @@ function accGraph(filePath, bucketName, metadata) {
                 pitch_array.push(Math.atan(-1 * X[i] / Z[i]))
                 roll_array.push(Math.atan(Y[i]/Math.sqrt(X[i] * X[i] + Z[i] * Z[i])))
             }
-
-            console.log('pitch: ' + pitch_array)
-            console.log('roll: ' + roll_array)
 
             var x_array = Array.apply(null, {length: pitch_array.length}).map(Number.call, Number)
              var pitch = {
@@ -139,6 +139,7 @@ function accGraph(filePath, bucketName, metadata) {
 
              var figure = {'data': graph_data}
 
+             // get graph from plotly
              plotly.getImage(figure, graphOptions, (err, imageStream) => {
                  if(err){
                      console.log("Pitch and roll plotting failed")
@@ -151,16 +152,15 @@ function accGraph(filePath, bucketName, metadata) {
                 const tempLocalFile = path.join(os.tmpdir(), 'graph.png');
                 const tempLocalDir = path.dirname(tempLocalFile);
 
+                // save graph on firebase
                 return mkdirp(tempLocalDir).then(() => {
                     console.log('Temporary directory has been created', tempLocalDir);
-                    // Download file from bucket.
                     var fileStream = fs.createWriteStream(tempLocalFile);
                     imageStream.pipe(fileStream);
                     console.log('The file has been downloaded to', tempLocalFile);
-                    // Uploading the Blurred image.
                     return bucket.upload(tempLocalFile, {
                       destination: 'graph.png',
-                      metadata: {metadata: 'image/png'}, // Keeping custom metadata.
+                      metadata: {metadata: 'image/png'}, 
                     });
                   }).then(() => {
                     console.log('Image uploaded to Storage at', filePath);
@@ -172,6 +172,8 @@ function accGraph(filePath, bucketName, metadata) {
     });
 }
 
+
+// Voice recognition using google speech API 
 function voiceRec(filePath, bucketName, metadata){
   // Imports the Google Cloud client library
   const speech = require('@google-cloud/speech');
@@ -215,47 +217,3 @@ function voiceRec(filePath, bucketName, metadata){
       console.error('ERROR:', err);
     });
 }
-
-
-exports.syncRecognizeGCS = functions.https.onRequest((req, res) => {
-  // Imports the Google Cloud client library
-  const speech = require('@google-cloud/speech');
-
-  // Creates a client
-  const client = new speech.SpeechClient();
-
-
-  const gcsUri = 'gs://microp-g2.appspot.com/test-online.raw';
-  const encoding = 'LINEAR16';
-  const sampleRateHertz = 8000;
-  const languageCode = 'en-US';
-
-  const config = {
-    encoding: encoding,
-    sampleRateHertz: sampleRateHertz,
-    languageCode: languageCode,
-  };
-  const audio = {
-    uri: gcsUri,
-  };
-
-  const request = {
-    config: config,
-    audio: audio,
-  };
-
-  // Detects speech in the audio file
-  client
-    .recognize(request)
-    .then(data => {
-      const response = data[0];
-      const transcription = response.results
-        .map(result => result.alternatives[0].transcript)
-        .join('\n');
-      console.log('Transcription: ', transcription)
-      return res.send('Transcription: ', transcription);
-    })
-    .catch(err => {
-      console.error('ERROR:', err);
-    });
-})
