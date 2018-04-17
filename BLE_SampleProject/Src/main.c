@@ -84,11 +84,12 @@ extern AxesRaw_t axes_data;
 int transmitType = 0; //0 for voice, 1 for accelerometer find: ISAAC TODO: Make it not 0
 typedef short int_16;
 uint8_t bnrg_expansion_board = IDB04A1; /* at startup, suppose the X-NUCLEO-IDB04A1 is used */
-short test_array[40] = {1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0}; //TODO: Delete test array and create 2 different arrays that would
-	//store the voice or accelerometer data for transmission
+
+short voice_array[40] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+short acc_array[40] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 int iter = -1;
 int delay_time = 600000;
-short msg[] = {9, 9, 9, 9, 9, 9, 9, 9, 9, 9};
+short msg[40] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 	
 	/**
  * @}
@@ -133,6 +134,7 @@ UART_HandleTypeDef huart6;
  */
 int main(void)
 {
+  // set credentials for bluetooth
   const char *name = "IsaaNRG";
   uint8_t SERVER_BDADDR[] = {0x12, 0x34, 0x00, 0xE1, 0x80, 0x03};
   uint8_t bdaddr[BDADDR_SIZE];
@@ -168,11 +170,10 @@ int main(void)
 
 	/* Start USART6 */
 	MX_GPIO_Init();
+
+  /* Start USART6 */
   MX_USART6_UART_Init();
 	HAL_UART_MspInit(&huart6);
-
-	
-
 	HAL_UART_Receive_IT(&huart6, (uint8_t*)msg, 11);
 
   /* Initialize the BlueNRG SPI driver */
@@ -322,11 +323,9 @@ int main(void)
 
 
 /**
- * @brief  Process user input (i.e. pressing the USER button on Nucleo board)
- *         and send the updated acceleration data to the remote client.
-
-
- *
+ * @brief  Process user input 
+ *         and send the updated mic and acceleration data to the remote client.
+ *         
  * @param  AxesRaw_t* p_axes
  * @retval None
  */
@@ -336,12 +335,7 @@ void User_Process(AxesRaw_t* p_axes)
     setConnectable();
     set_connectable = FALSE;
   }  
-  /* Check if the user has pushed the button */
-  //if(BSP_PB_GetState(BUTTON_KEY) == RESET)
-  //{
-    //while (BSP_PB_GetState(BUTTON_KEY) == RESET);
-    
-    //BSP_LED_Toggle(LED2); //used for debugging (BSP_LED_Init() above must be also enabled)
+    // send specific sequence of code to let the bluetooth know which kind of data it is receiving 
     
     if(connected)
     {
@@ -374,17 +368,17 @@ void User_Process(AxesRaw_t* p_axes)
 				}
 				iter++;
 			}
-			else if (iter != -1 && iter*10 < 40){ //TODO: Need to change const value of 40 to be size of array
-				p_axes->A = test_array[iter*10];
-				p_axes->B = test_array[iter*10+1];
-				p_axes->C = test_array[iter*10+2];
-				p_axes->D = test_array[iter*10+3];
-				p_axes->E = test_array[iter*10+4];
-				p_axes->F = test_array[iter*10+5];
-				p_axes->G = test_array[iter*10+6];
-				p_axes->H = test_array[iter*10+7];
-				p_axes->I = test_array[iter*10+8];
-				p_axes->J = test_array[iter*10+9];
+			else if (iter != -1 && iter*10 < 40){ 
+				p_axes->A = msg[iter*10];
+				p_axes->B = msg[iter*10+1];
+				p_axes->C = msg[iter*10+2];
+				p_axes->D = msg[iter*10+3];
+				p_axes->E = msg[iter*10+4];
+				p_axes->F = msg[iter*10+5];
+				p_axes->G = msg[iter*10+6];
+				p_axes->H = msg[iter*10+7];
+				p_axes->I = msg[iter*10+8];
+				p_axes->J = msg[iter*10+9];
 				iter++;
 				for(int i = 0; i<delay_time; i++){ //delay hyperparameter tuning
 				}
@@ -407,19 +401,13 @@ void User_Process(AxesRaw_t* p_axes)
 				//TODO: Escape to UART Polling mode. 
 			}
 			
-			
-			
-			
-      //p_axes->AXIS_Y -= 1;
-      //p_axes->AXIS_Z += 2;
-			//p_axes->AXIS_A += 3;
-			//p_axes->AXIS_B += 4;
-      //PRINTF("ACC: X=%6d Y=%6d Z=%6d\r\n", p_axes->AXIS_X, p_axes->AXIS_Y, p_axes->AXIS_Z);
+		
       Acc_Update(p_axes);
     }
-  //}
 }
 
+
+// Initialize USART6 
 static void MX_USART6_UART_Init(void)
 {
 
@@ -510,12 +498,15 @@ void HAL_MspInit(void)
   /* USER CODE END MspInit 1 */
 }
 
+
+// function called once the transfer is complete. 
+// Recall RECEIVE_IT to continue next trasnfer
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart){
-	printf("callback");
 	HAL_UART_Receive_IT(&huart6, (uint8_t*)msg, 11);
 }
 
 
+// Initiate pins and interrupt for USART6
 void HAL_UART_MspInit(UART_HandleTypeDef* huart)
 {
 
