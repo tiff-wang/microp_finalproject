@@ -34,9 +34,19 @@
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx.h"
 #include "stm32f4xx_it.h"
+#include "main.h"
 
 /* USER CODE BEGIN 0 */
 extern uint8_t MyFlag;
+extern int accCounter;
+extern int audioBuffer[];
+extern int bufferIndex;
+extern ADC_HandleTypeDef hadc1;
+extern int adcSampling;
+extern int audioIndex;
+
+extern UART_HandleTypeDef huart5;
+
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
@@ -57,6 +67,7 @@ void SysTick_Handler(void)
   HAL_SYSTICK_IRQHandler();
   /* USER CODE BEGIN SysTick_IRQn 1 */
 	MyFlag ++;
+	//accCounter++;
   /* USER CODE END SysTick_IRQn 1 */
 }
 
@@ -67,9 +78,34 @@ void SysTick_Handler(void)
 /* please refer to the startup file (startup_stm32f4xx.s).                    */
 /******************************************************************************/
 
+void ADC_IRQHandler(void)
+{
+  /* USER CODE BEGIN ADC_IRQn 0 */
+	//int adc = HAL_ADC_GetValue(&hadc1);
+	//printf("adc reading: %i\n", adc);
+  /* USER CODE END ADC_IRQn 0 */
+  HAL_ADC_IRQHandler(&hadc1);
 
+	
+	 /* USER CODE BEGIN ADC_IRQn 1 */
+
+  /* USER CODE END ADC_IRQn 1 */
+}
+
+void UART5_IRQHandler(void)
+{
+  /* USER CODE BEGIN UART5_IRQn 0 */
+
+  /* USER CODE END UART5_IRQn 0 */
+
+  HAL_UART_IRQHandler(&huart5);
+
+  /* USER CODE BEGIN UART5_IRQn 1 */
+  /* USER CODE END UART5_IRQn 1 */
+}
 
 /* USER CODE BEGIN 1 */
+
 
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
